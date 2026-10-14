@@ -68,9 +68,9 @@ class IncomingItemController extends Controller
                 'keterangan' => $request->keterangan,
             ];
 
-            $this->inventoryService->processIncomingTransaction($headerData, $itemsData, auth()->id());
+            $transaction = $this->inventoryService->processIncomingTransaction($headerData, $itemsData, auth()->id());
 
-            return redirect()->route('incoming.index')->with('success', 'Transaksi barang masuk berhasil disimpan. Stok barang telah diperbarui.');
+            return redirect()->route('incoming.index')->with('success', 'Transaksi barang masuk berhasil disimpan. Stok barang telah diperbarui.')->with('receipt_url', route('incoming.receipt', $transaction->id));
         } catch (Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }

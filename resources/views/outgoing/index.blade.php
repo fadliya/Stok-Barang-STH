@@ -73,6 +73,7 @@
                                         class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition" title="Lihat Rincian Item">
                                     <i class="fa-solid fa-eye text-base"></i>
                                 </button>
+                                <a href="{{ route('outgoing.receipt', $tx->id) }}" class="p-2 text-orange-600 hover:underline" title="Cetak struk">Struk</a>
                                 <form id="delete-outgoing-{{ $tx->id }}" action="{{ route('outgoing.destroy', $tx->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')

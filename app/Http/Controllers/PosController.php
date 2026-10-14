@@ -64,9 +64,9 @@ class PosController extends Controller
                     'keterangan' => $request->keterangan,
                 ];
 
-                $this->inventoryService->processIncomingTransaction($headerData, $itemsData, auth()->id());
+                $transaction = $this->inventoryService->processIncomingTransaction($headerData, $itemsData, auth()->id());
 
-                return redirect()->route('incoming.index')->with('success', 'Transaksi Barang Masuk berhasil disimpan. Stok barang telah diperbarui.');
+                return redirect()->route('incoming.index')->with('success', 'Transaksi Barang Masuk berhasil disimpan. Stok barang telah diperbarui.')->with('receipt_url', route('incoming.receipt', $transaction->id));
 
             } else {
                 $request->validate([
@@ -81,9 +81,9 @@ class PosController extends Controller
                     'keterangan' => $request->keterangan,
                 ];
 
-                $this->inventoryService->processOutgoingTransaction($headerData, $itemsData, auth()->id());
+                $transaction = $this->inventoryService->processOutgoingTransaction($headerData, $itemsData, auth()->id());
 
-                return redirect()->route('outgoing.index')->with('success', 'Transaksi Barang Keluar berhasil disimpan. Stok barang telah dikurangi.');
+                return redirect()->route('outgoing.index')->with('success', 'Transaksi Barang Keluar berhasil disimpan. Stok barang telah dikurangi.')->with('receipt_url', route('outgoing.receipt', $transaction->id));
             }
         } catch (Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());

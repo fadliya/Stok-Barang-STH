@@ -12,6 +12,7 @@
             <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Daftar transaksi penerimaan pengadaan barang dari supplier. Klik transaksi untuk melihat rincian item.</p>
         </div>
         <div class="flex items-center space-x-2">
+            <a href="{{ route('goods-requests.index') }}" class="inline-flex items-center px-4 py-2.5 bg-orange-50 text-orange-700 rounded-2xl text-xs font-bold">Permintaan / Pemesanan</a>
             <a href="{{ route('incoming.create') }}" class="inline-flex items-center px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-2xl text-xs font-bold transition">
                 <i class="fa-solid fa-[#ff8000] fa-pen-to-square mr-1.5"></i>
                 <span>+ Form Manual</span>
@@ -73,6 +74,7 @@
                                         class="p-2 text-slate-400 hover:text-[#ff8000] rounded-xl hover:bg-orange-50 transition" title="Lihat Rincian Item">
                                     <i class="fa-solid fa-eye text-base"></i>
                                 </button>
+                                <a href="{{ route('incoming.receipt', $tx->id) }}" class="p-2 text-orange-600 hover:underline" title="Cetak struk">Struk</a>
                                 <form id="delete-incoming-{{ $tx->id }}" action="{{ route('incoming.destroy', $tx->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
