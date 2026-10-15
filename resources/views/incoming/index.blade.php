@@ -78,7 +78,12 @@
                                         class="p-2 text-slate-400 hover:text-[#ff8000] rounded-xl hover:bg-orange-50 transition" title="Lihat Rincian Item">
                                     <i class="fa-solid fa-eye text-base"></i>
                                 </button>
-                                <a href="{{ route('incoming.receipt', $tx->id) }}" class="p-2 text-orange-600 hover:underline" title="Cetak struk">Struk</a>
+                                <a href="{{ route('incoming.receipt', $tx->id) }}"
+                                   class="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs font-bold text-orange-700 transition-colors hover:border-orange-300 hover:bg-orange-100 active:bg-orange-200 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-300 dark:hover:border-orange-600 dark:hover:bg-orange-900/50"
+                                   aria-label="Lihat struk {{ $tx->kode_transaksi }}" title="Lihat dan cetak struk">
+                                    <i class="fa-solid fa-receipt text-sm" aria-hidden="true"></i>
+                                    <span>Struk</span>
+                                </a>
                                 <form id="delete-incoming-{{ $tx->id }}" action="{{ route('incoming.destroy', $tx->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
