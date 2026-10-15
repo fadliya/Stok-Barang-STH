@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Mail\BrevoTransport;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -23,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->make('mail.manager')->extend('brevo', fn () => new BrevoTransport(
+            (string) config('services.brevo.key')
+        ));
+
         if ($this->app->environment('production') || request()->header('X-Forwarded-Proto') === 'https') {
             URL::forceScheme('https');
         }
