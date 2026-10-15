@@ -118,7 +118,7 @@ class InventorySafetyTest extends TestCase
                 ]),
             ]);
 
-        $response->assertRedirect('/outgoing');
+        $response->assertRedirect(session('receipt_url'));
         $this->item->refresh();
         $this->assertEquals(3, $this->item->stok);
     }

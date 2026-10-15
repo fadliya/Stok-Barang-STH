@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cetak Stiker Barcode Massal - PT STH Network</title>
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Libre+Barcode+128&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
-
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         @media print {
             .no-print { display: none !important; }
@@ -23,7 +19,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 min-h-screen p-6 font-sans">
+<body class="inventory-shell bg-slate-100 min-h-screen p-6 font-sans">
 
     <!-- Header Action Bar (Hidden on Print) -->
     <div class="no-print max-w-5xl mx-auto mb-6 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
@@ -68,7 +64,7 @@
     </div>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("app:ready", function() {
             document.querySelectorAll(".barcode-svg").forEach(function(el) {
                 const val = el.getAttribute("data-value");
                 if (val) {

@@ -47,7 +47,7 @@
                 <input :type="show ? 'text' : 'password'" name="password" id="password" required
                        placeholder="Masukkan password Anda"
                        class="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#ff8000] focus:ring-2 focus:ring-[#ff8000]/20 text-sm transition-all">
-                <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <button type="button" aria-label="Tampilkan atau sembunyikan password" :aria-pressed="show" @click="show = !show" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-white">
                     <i class="fa-solid" :class="show ? 'fa-eye-slash' : 'fa-eye'"></i>
                 </button>
             </div>
@@ -75,7 +75,7 @@
 
     <!-- Instagram Link Footer -->
     <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-        <a href="https://www.instagram.com/sthnetwork.id?igsh=MWJvcjQ4ejVxbTNscQ%3D%3D" target="_blank" 
+        <a href="https://www.instagram.com/sthnetwork.id?igsh=MWJvcjQ4ejVxbTNscQ%3D%3D" target="_blank" rel="noopener noreferrer"
            class="inline-flex items-center space-x-1.5 text-xs text-[#ff8000] hover:underline font-extrabold transition">
             <i class="fa-brands fa-instagram text-base"></i>
             <span>Instagram: @sthnetwork.id</span>

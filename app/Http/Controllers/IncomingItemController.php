@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\InventoryTransactionRequest;
 use App\Models\Item;
 use App\Repositories\Contracts\IncomingTransactionRepositoryInterface;
 use App\Services\CategoryService;
@@ -19,9 +20,10 @@ class IncomingItemController extends Controller
         protected IncomingTransactionRepositoryInterface $incomingRepo
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = $this->incomingRepo->getPaginated(15);
+        $filters = $request->validate(['search' => ['nullable', 'string', 'max:255']]);
+        $transactions = $this->incomingRepo->getPaginated(15, trim($filters['search'] ?? ''));
 
         return view('incoming.index', compact('transactions'));
     }
@@ -35,33 +37,10 @@ class IncomingItemController extends Controller
         return view('incoming.create', compact('items', 'categories', 'suppliers'));
     }
 
-    public function store(Request $request)
+    public function store(InventoryTransactionRequest $request)
     {
-        $request->validate([
-            'supplier_id' => ['required', 'exists:suppliers,id'],
-            'tanggal' => ['required'],
-            'keterangan' => ['nullable', 'string'],
-            'items' => ['required'],
-        ], [
-            'supplier_id.required' => 'Supplier pemasok wajib dipilih.',
-            'supplier_id.exists' => 'Supplier tidak ditemukan.',
-            'tanggal.required' => 'Tanggal penerimaan wajib diisi.',
-            'items.required' => 'Daftar barang tidak boleh kosong.',
-        ]);
-
+        $itemsData = $request->validated('items');
         try {
-            $rawItems = is_array($request->items) ? $request->items : json_decode($request->items, true);
-            if (! is_array($rawItems) || count($rawItems) === 0) {
-                return redirect()->back()->withInput()->with('error', 'Silakan pilih minimal 1 barang sebelum menyimpan.');
-            }
-
-            $itemsData = array_map(function ($row) {
-                return [
-                    'item_id' => $row['item_id'] ?? $row['id'] ?? null,
-                    'jumlah' => (int) ($row['jumlah'] ?? 1),
-                ];
-            }, $rawItems);
-
             $headerData = [
                 'supplier_id' => $request->supplier_id,
                 'tanggal' => $request->tanggal,
@@ -70,7 +49,7 @@ class IncomingItemController extends Controller
 
             $transaction = $this->inventoryService->processIncomingTransaction($headerData, $itemsData, auth()->id());
 
-            return redirect()->route('incoming.index')->with('success', 'Transaksi barang masuk berhasil disimpan. Stok barang telah diperbarui.')->with('receipt_url', route('incoming.receipt', $transaction->id));
+            return redirect()->route('incoming.receipt', $transaction->id)->with('success', 'Transaksi barang masuk berhasil disimpan. Stok barang telah diperbarui.')->with('receipt_url', route('incoming.receipt', $transaction->id));
         } catch (Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
@@ -83,7 +62,7 @@ class IncomingItemController extends Controller
             return redirect()->route('incoming.index')->with('error', 'Data transaksi tidak ditemukan.');
         }
 
-        return view('incoming.show', compact('transaction'));
+        return redirect()->route('incoming.receipt', $transaction->id);
     }
 
     public function destroy($id)

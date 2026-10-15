@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ItemRequest;
 use App\Models\Item;
 use App\Services\CategoryService;
+use App\Services\InventoryService;
 use App\Services\ItemService;
 use App\Services\SupplierService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ItemController extends Controller
 {
@@ -18,11 +20,17 @@ class ItemController extends Controller
         protected SupplierService $supplierService
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $items = $this->itemService->getItemsPaginated(15);
+        $filters = $request->validate([
+            'search' => ['nullable', 'string', 'max:255'],
+            'stock' => ['nullable', 'in:low,normal,empty'],
+            'category' => ['nullable', 'integer', 'exists:categories,id'],
+        ]);
+        $items = $this->itemService->getItemsPaginated(15, $filters);
+        $categories = $this->categoryService->getAllCategories();
 
-        return view('items.index', compact('items'));
+        return view('items.index', compact('items', 'categories'));
     }
 
     public function create()
@@ -33,9 +41,26 @@ class ItemController extends Controller
         return view('items.create', compact('categories', 'suppliers'));
     }
 
-    public function store(ItemRequest $request)
+    public function store(ItemRequest $request, InventoryService $inventory)
     {
-        $this->itemService->createItem($request->validated());
+        $transaction = DB::transaction(function () use ($request, $inventory) {
+            $data = $request->validated();
+            $initialStock = (int) $data['stok'];
+            $data['stok'] = 0;
+            $item = $this->itemService->createItem($data);
+
+            return $initialStock > 0 ? $inventory->processIncomingTransaction([
+                'supplier_id' => $item->supplier_id,
+                'tanggal' => now(),
+                'keterangan' => 'Penerimaan stok awal: '.$item->nama_barang,
+            ], [['item_id' => $item->id, 'jumlah' => $initialStock]], $request->user()->id) : null;
+        });
+
+        if ($transaction) {
+            return redirect()->route('incoming.receipt', $transaction->id)
+                ->with('success', 'Barang ditambahkan. Stok awal tercatat sebagai penerimaan.')
+                ->with('receipt_url', route('incoming.receipt', $transaction->id));
+        }
 
         return redirect()->route('items.index')->with('success', 'Barang berhasil ditambahkan.');
     }

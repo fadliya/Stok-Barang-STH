@@ -14,7 +14,7 @@
         
         <!-- Export Action Buttons -->
         <div class="flex items-center space-x-2">
-            <a href="{{ route('reports.export-pdf', ['type' => 'stock']) }}" target="_blank"
+            <a href="{{ route('reports.export-pdf', ['type' => 'stock']) }}" target="_blank" rel="noopener noreferrer"
                class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center space-x-1.5">
                 <i class="fa-solid fa-file-pdf text-sm"></i>
                 <span>Export PDF / Print</span>

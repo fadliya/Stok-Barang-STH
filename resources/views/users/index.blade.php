@@ -58,7 +58,7 @@
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50 text-slate-700 dark:text-slate-300">
                     @forelse($users as $index => $user)
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition"
-                        x-show="(search === '' || '{{ strtolower($user->name) }}'.includes(search.toLowerCase()) || '{{ strtolower($user->username) }}'.includes(search.toLowerCase())) && (roleFilter === '' || '{{ $user->role }}' === roleFilter)">
+                        x-show="(search === '' || @js(strtolower($user->name)).includes(search.toLowerCase()) || @js(strtolower($user->username)).includes(search.toLowerCase())) && (roleFilter === '' || @js($user->role) === roleFilter)">
                         <td class="px-6 py-4 font-semibold text-slate-400">{{ $index + 1 }}</td>
                         <td class="px-6 py-4 font-bold text-slate-800 dark:text-white flex items-center space-x-3">
                             <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-cyan-600 dark:text-cyan-400 border border-slate-200 dark:border-slate-600">
@@ -86,7 +86,7 @@
                                 <form id="delete-user-{{ $user->id }}" action="{{ route('users.destroy', $user->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" onclick="confirmDelete('delete-user-{{ $user->id }}', 'Apakah Anda yakin ingin menghapus akun {{ $user->name }}?')" 
+                                    <button type="button" onclick="confirmDelete(@js('delete-user-'.$user->id), @js('Hapus data: '.$user->name. '?'))"
                                             class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Hapus User">
                                         <i class="fa-solid fa-trash text-base"></i>
                                     </button>

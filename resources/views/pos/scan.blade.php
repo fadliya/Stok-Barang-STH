@@ -4,6 +4,7 @@
 
 @section('content')
 <div class="max-w-5xl mx-auto space-y-6" x-data="universalPosScanner()">
+    <div x-cloak x-show="initialReceiptUrl" class="p-4 bg-emerald-50 dark:bg-slate-800 rounded-xl" role="status">Stok awal telah dicatat. <a :href="initialReceiptUrl" target="_blank" rel="noopener noreferrer" class="underline font-bold">Lihat struk penerimaan awal</a></div>
 
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -135,7 +136,7 @@
                         <div class="absolute inset-y-0 left-0 pl-3.5 sm:pl-4 flex items-center pointer-events-none text-slate-400">
                             <i class="fa-solid fa-barcode text-lg sm:text-xl"></i>
                         </div>
-                        <input type="text" x-ref="barcodeInput" x-model="barcodeQuery" @keydown.enter.prevent="handleScan()" 
+                        <input id="barcode_input" type="text" x-ref="barcodeInput" x-model="barcodeQuery" @keydown.enter.prevent="handleScan()"
                                placeholder="Arahkan barcode scanner / ketik kode..." 
                                class="w-full pl-10 sm:pl-12 pr-4 sm:pr-48 py-3 sm:py-3.5 bg-slate-50 dark:bg-slate-800 border-2 rounded-2xl text-sm sm:text-base font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-4 transition-all"
                                :class="transactionType === 'incoming' ? 'border-emerald-500/40 focus:border-emerald-500 focus:ring-emerald-500/10' : 'border-rose-500/40 focus:border-rose-500 focus:ring-rose-500/10'">
@@ -217,7 +218,7 @@
                                         </td>
                                         <td class="px-5 py-3.5 font-semibold text-slate-500" x-text="item.satuan"></td>
                                         <td class="px-5 py-3.5 text-center">
-                                            <button type="button" @click="removeItem(index)" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition" title="Hapus dari daftar">
+                                            <button type="button" @click="removeItem(index)" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition" aria-label="Hapus dari daftar" title="Hapus dari daftar">
                                                 <i class="fa-solid fa-trash text-sm"></i>
                                             </button>
                                         </td>
@@ -257,7 +258,7 @@
     </div>
 
     <!-- Modal: Barcode Belum Terdaftar (Quick Register Modal) -->
-    <div x-cloak x-show="showRegisterModal" 
+    <div x-cloak x-show="showRegisterModal" x-trap.inert.noscroll="showRegisterModal" @keydown.escape.window="showRegisterModal = false" role="dialog" aria-modal="true" aria-label="Registrasi barang baru"
          class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5" @click.outside="showRegisterModal = false">
             
@@ -392,8 +393,8 @@
 
                 <div class="pt-5 flex justify-end space-x-2">
                     <button type="button" @click="showRegisterModal = false" class="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold rounded-xl">Batal</button>
-                    <button type="submit" class="px-5 py-2.5 bg-[#ff8000] hover:bg-[#e67300] text-white text-xs font-extrabold rounded-xl shadow-md">
-                        Simpan & Masukkan ke Daftar Scan
+                    <button type="submit" :disabled="isRegistering" class="px-5 py-2.5 bg-[#ff8000] hover:bg-[#e67300] text-white text-xs font-extrabold rounded-xl shadow-md">
+                        <span x-text="isRegistering ? 'Menyimpan…' : 'Simpan & Masukkan ke Daftar Scan'"></span>
                     </button>
                 </div>
             </form>
@@ -401,7 +402,7 @@
     </div>
 
     <!-- Modal: Camera Barcode Scanner -->
-    <div x-cloak x-show="showCameraModal" 
+    <div x-cloak x-show="showCameraModal" x-trap.inert.noscroll="showCameraModal" @keydown.escape.window="closeCameraScanner()" role="dialog" aria-modal="true" aria-label="Scan kamera"
          class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm"
          @click.self="closeCameraScanner()">
         <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-4">
@@ -441,11 +442,13 @@
 </div>
 
 @push('scripts')
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 function universalPosScanner() {
     return {
-        transactionType: 'incoming', // incoming, outgoing
+        transactionType: @js(request('type') === 'outgoing' ? 'outgoing' : 'incoming'),
+        isSubmitting: false,
+        isRegistering: false,
+        initialReceiptUrl: null, // incoming, outgoing
         supplierId: '{{ old("supplier_id") }}',
         tujuan: '{{ old("tujuan") }}',
         tanggal: '{{ old("tanggal", date("Y-m-d\TH:i")) }}',
@@ -490,6 +493,7 @@ function universalPosScanner() {
         },
 
         get isSubmitDisabled() {
+            if (this.isSubmitting) return true;
             if (this.cartItems.length === 0) return true;
             if (this.transactionType === 'outgoing' && (!this.tujuan || this.hasStockExceeded)) return true;
             return false;
@@ -534,6 +538,7 @@ function universalPosScanner() {
                         return;
                     }
 
+                    if (data.receipt_url) this.initialReceiptUrl = data.receipt_url;
                     this.cartItems.push({
                         id: data.item.id,
                         barcode: data.item.barcode,
@@ -587,7 +592,7 @@ function universalPosScanner() {
             this.$nextTick(async () => {
                 try {
                     if (!this.html5QrScanner) {
-                        this.html5QrScanner = new Html5Qrcode("camera-reader-pos");
+                        this.html5QrScanner = new (await window.loadBarcodeCamera())("camera-reader-pos");
                     }
 
                     const config = { 
@@ -638,6 +643,8 @@ function universalPosScanner() {
         },
 
         async saveNewItem() {
+            if (this.isRegistering) return;
+            this.isRegistering = true;
             const payload = { ...this.newItem };
             if (this.isNewCategory) {
                 payload.category_id = 'NEW';
@@ -659,6 +666,7 @@ function universalPosScanner() {
 
                 const data = await response.json();
                 if (data.success && data.item) {
+                    if (data.receipt_url) this.initialReceiptUrl = data.receipt_url;
                     this.cartItems.push({
                         id: data.item.id,
                         barcode: data.item.barcode,
@@ -683,6 +691,8 @@ function universalPosScanner() {
             } catch (err) {
                 console.error(err);
                 alert('Terjadi kesalahan saat menyimpan barang baru.');
+            } finally {
+                this.isRegistering = false;
             }
         },
 
@@ -703,6 +713,8 @@ function universalPosScanner() {
                 alert('Terdapat barang dengan Qty melebihi stok yang ada! Perbaiki sebelum menyimpan.');
                 return;
             }
+            if (this.isSubmitting) return;
+            this.isSubmitting = true;
             document.getElementById('universal-pos-form').submit();
         }
     }

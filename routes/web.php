@@ -39,7 +39,7 @@ Route::middleware('auth')->group(function () {
 
     // Barcode Scanning API Endpoints
     Route::get('/api/items/scan', [BarcodeScanController::class, 'scan'])->name('api.items.scan');
-    Route::post('/api/items/quick-store', [BarcodeScanController::class, 'quickStore'])->name('api.items.quick-store');
+    Route::post('/api/items/quick-store', [BarcodeScanController::class, 'quickStore'])->middleware('role:admin,gudang')->name('api.items.quick-store');
 
     // Item View (Accessible by Admin, Gudang, Pimpinan)
     Route::get('/items', [ItemController::class, 'index'])->name('items.index');

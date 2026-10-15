@@ -131,7 +131,7 @@ class InventoryStockTest extends TestCase
                     'tanggal' => '2026-10-14',
                     'items' => json_encode([['item_id' => $this->item->id, 'jumlah' => 2]]),
                 ]);
-                $response->assertRedirect('/'.$type)->assertSessionHas('receipt_url');
+                $response->assertRedirect(session('receipt_url'))->assertSessionHas('receipt_url');
                 $receiptUrl = session('receipt_url');
                 $this->get($receiptUrl)->assertOk()->assertSee('Barang Testing')->assertSee('Cetak / Simpan PDF');
                 $this->actingAs($this->pimpinan)->get($receiptUrl)->assertRedirect('/dashboard');
@@ -197,7 +197,7 @@ class InventoryStockTest extends TestCase
                 ]),
             ]);
 
-        $response->assertRedirect('/incoming');
+        $response->assertRedirect(session('receipt_url'));
         $this->item->refresh();
 
         $this->assertEquals(25, $this->item->stok);
@@ -218,7 +218,7 @@ class InventoryStockTest extends TestCase
                 ]),
             ]);
 
-        $response->assertRedirect('/outgoing');
+        $response->assertRedirect(session('receipt_url'));
         $this->item->refresh();
 
         $this->assertEquals(6, $this->item->stok);

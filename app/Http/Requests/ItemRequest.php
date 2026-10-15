@@ -14,7 +14,7 @@ class ItemRequest extends FormRequest
 
     public function rules(): array
     {
-        $itemId = $this->route('item') ? $this->route('item') : null;
+        $itemId = $this->route('id') ?? $this->route('item');
 
         return [
             'kode_barang' => ['required', 'string', 'max:100', Rule::unique('items', 'kode_barang')->ignore($itemId)],
@@ -22,8 +22,8 @@ class ItemRequest extends FormRequest
             'category_id' => ['required', 'exists:categories,id'],
             'supplier_id' => ['required', 'exists:suppliers,id'],
             'satuan' => ['required', 'string', 'max:50'],
-            'stok' => ['required', 'integer', 'min:0'],
-            'minimum_stok' => ['required', 'integer', 'min:0'],
+            'stok' => $itemId ? ['prohibited'] : ['required', 'integer', 'min:0', 'max:2147483647'],
+            'minimum_stok' => ['required', 'integer', 'min:0', 'max:2147483647'],
             'keterangan' => ['nullable', 'string'],
         ];
     }
@@ -41,6 +41,7 @@ class ItemRequest extends FormRequest
             'satuan.required' => 'Satuan barang wajib diisi.',
             'stok.required' => 'Stok awal wajib diisi.',
             'stok.min' => 'Stok minimal 0.',
+            'stok.prohibited' => 'Ubah persediaan melalui transaksi barang masuk, barang keluar, atau stok opname.',
             'minimum_stok.required' => 'Minimum stok wajib diisi.',
             'minimum_stok.min' => 'Minimum stok minimal 0.',
         ];

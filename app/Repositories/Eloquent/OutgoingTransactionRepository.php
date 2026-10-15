@@ -18,9 +18,16 @@ class OutgoingTransactionRepository implements OutgoingTransactionRepositoryInte
             ->get();
     }
 
-    public function getPaginated(int $perPage = 15): LengthAwarePaginator
+    public function getPaginated(int $perPage = 15, string $search = ''): LengthAwarePaginator
     {
         return OutgoingTransaction::with(['user', 'details.item'])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    $query->where('kode_transaksi', 'like', '%'.$search.'%')
+                        ->orWhere('tujuan', 'like', '%'.$search.'%')
+                        ->orWhereHas('user', fn ($user) => $user->where('name', 'like', '%'.$search.'%'));
+                });
+            })
             ->orderBy('tanggal', 'desc')
             ->orderBy('id', 'desc')
             ->paginate($perPage)

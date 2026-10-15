@@ -13,9 +13,9 @@ class ItemService
         return $this->itemRepo->getAll();
     }
 
-    public function getItemsPaginated(int $perPage = 15)
+    public function getItemsPaginated(int $perPage = 15, array $filters = [])
     {
-        return $this->itemRepo->getPaginated($perPage);
+        return $this->itemRepo->getPaginated($perPage, $filters);
     }
 
     public function getItemById(int $id)

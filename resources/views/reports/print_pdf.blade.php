@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 11px;
+            font-size: 12px;
             color: #1e293b;
             margin: 0;
             padding: 20px;
@@ -15,7 +15,7 @@
         }
         .header {
             text-align: center;
-            border-bottom: 3px double #ff8000;
+            border-bottom: 3px double #c4510b;
             padding-bottom: 12px;
             margin-bottom: 20px;
             position: relative;
@@ -37,7 +37,7 @@
             font-size: 13px;
             font-weight: 700;
             margin: 3px 0 0 0;
-            color: #ff8000;
+            color: #c4510b;
             text-transform: uppercase;
         }
         .header p {
@@ -75,9 +75,9 @@
             background-color: #fff8f0;
             font-weight: 700;
             text-transform: uppercase;
-            font-size: 9px;
+            font-size: 11px;
             color: #804000;
-            border-bottom: 2px solid #ff8000;
+            border-bottom: 2px solid #c4510b;
         }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
@@ -105,7 +105,7 @@
 <body>
 
     <div class="no-print" style="margin-bottom: 20px; text-align: right;">
-        <button onclick="window.print()" style="padding: 8px 16px; background: #ff8000; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
+        <button onclick="window.print()" style="padding: 8px 16px; background: #c4510b; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;">
             🖨️ Cetak / Simpan PDF
         </button>
     </div>
@@ -151,7 +151,7 @@
                     <td>{{ $tx->supplier->nama ?? '-' }}</td>
                     <td class="font-mono font-bold">{{ $detail->item->barcode ?? $detail->item->kode_barang ?? '-' }}</td>
                     <td class="font-bold">{{ $detail->item->nama_barang ?? '-' }}</td>
-                    <td class="text-right font-bold" style="color: #059669;">+{{ number_format($detail->jumlah) }}</td>
+                    <td class="text-right font-bold" style="color: #047857;">+{{ number_format($detail->jumlah) }}</td>
                     <td>{{ $detail->item->satuan ?? '-' }}</td>
                     <td>{{ $tx->user->name ?? '-' }}</td>
                 </tr>
@@ -220,14 +220,14 @@
             @forelse($data as $index => $row)
             <tr>
                 <td class="text-center">{{ $index + 1 }}</td>
-                <td class="font-mono font-bold" style="color: #ff8000;">{{ $row->barcode ?? '-' }}</td>
+                <td class="font-mono font-bold" style="color: #c4510b;">{{ $row->barcode ?? '-' }}</td>
                 <td class="font-mono font-bold">{{ $row->kode_barang }}</td>
                 <td class="font-bold">{{ $row->nama_barang }}</td>
                 <td>{{ $row->category->nama ?? '-' }}</td>
                 <td>{{ $row->supplier->nama ?? '-' }}</td>
                 <td class="text-right font-bold">{{ number_format($row->stok) }} {{ $row->satuan }}</td>
                 <td class="text-right">{{ number_format($row->minimum_stok) }} {{ $row->satuan }}</td>
-                <td class="text-center font-bold" style="color: {{ $row->stok <= $row->minimum_stok ? '#e11d48' : '#059669' }};">
+                <td class="text-center font-bold" style="color: {{ $row->stok <= $row->minimum_stok ? '#e11d48' : '#047857' }};">
                     {{ $row->stok <= $row->minimum_stok ? 'STOK HAMPIR HABIS' : 'NORMAL' }}
                 </td>
             </tr>
@@ -247,7 +247,7 @@
             <p class="font-bold">Mengetahui & Menyetujui,</p>
             <div class="sig-space"></div>
             <p class="font-bold" style="text-decoration: underline;">( ............................................ )</p>
-            <p style="font-size: 9px; color: #64748b;">Pimpinan / Manajer Gudang</p>
+            <p style="font-size: 11px; color: #64748b;">Pimpinan / Manajer Gudang</p>
         </div>
     </div>
 

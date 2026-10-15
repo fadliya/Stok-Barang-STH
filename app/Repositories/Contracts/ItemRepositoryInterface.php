@@ -10,7 +10,7 @@ interface ItemRepositoryInterface
 {
     public function getAll(): Collection;
 
-    public function getPaginated(int $perPage = 15): LengthAwarePaginator;
+    public function getPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator;
 
     public function findById(int $id): ?Item;
 

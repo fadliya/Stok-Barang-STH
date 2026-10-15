@@ -82,7 +82,7 @@
                             <!-- Qty -->
                             <div class="w-full sm:w-32">
                                 <label class="block text-[10px] font-bold uppercase text-slate-400 mb-1 sm:hidden">Jumlah</label>
-                                <input type="number" :name="`items[${index}][jumlah]`" x-model.number="row.jumlah" min="1" required placeholder="Jumlah"
+                                <input type="number" :name="`items[${index}][jumlah]`" x-model.number="row.jumlah" min="1" max="2147483647" step="1" required placeholder="Jumlah"
                                        class="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-rose-500">
                             </div>
 
@@ -111,9 +111,7 @@
 <script>
 function manualOutgoingForm() {
     return {
-        rows: [
-            { item_id: '', jumlah: 1 }
-        ],
+        rows: @js(old('items', [['item_id' => '', 'jumlah' => 1]])),
         addRow() {
             this.rows.push({ item_id: '', jumlah: 1 });
         },

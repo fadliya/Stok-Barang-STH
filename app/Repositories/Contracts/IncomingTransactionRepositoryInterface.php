@@ -10,7 +10,7 @@ interface IncomingTransactionRepositoryInterface
 {
     public function getAll(): Collection;
 
-    public function getPaginated(int $perPage = 15): LengthAwarePaginator;
+    public function getPaginated(int $perPage = 15, string $search = ''): LengthAwarePaginator;
 
     public function findById(int $id): ?IncomingTransaction;
 

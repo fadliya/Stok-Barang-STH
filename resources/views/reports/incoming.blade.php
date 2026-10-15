@@ -13,7 +13,7 @@
         </div>
         
         <div class="flex items-center space-x-2">
-            <a href="{{ route('reports.export-pdf', array_merge(['type' => 'incoming'], request()->all())) }}" target="_blank"
+            <a href="{{ route('reports.export-pdf', array_merge(['type' => 'incoming'], request()->all())) }}" target="_blank" rel="noopener noreferrer"
                class="px-4 py-2.5 bg-[#ff8000] hover:bg-[#e67300] text-white rounded-2xl text-xs font-extrabold shadow-md shadow-[#ff8000]/20 transition flex items-center space-x-2">
                 <i class="fa-solid fa-print"></i>
                 <span>Cetak / Export PDF</span>
@@ -66,7 +66,7 @@
                 <button type="submit" class="w-full py-2.5 bg-[#ff8000] hover:bg-[#e67300] text-white font-extrabold rounded-xl transition">
                     <i class="fa-solid fa-filter mr-1"></i> Filter
                 </button>
-                <a href="{{ route('reports.incoming') }}" class="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 transition" title="Reset Filter">
+                <a href="{{ route('reports.incoming') }}" class="px-3 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold rounded-xl hover:bg-slate-200 transition" aria-label="Reset Filter" title="Reset Filter">
                     <i class="fa-solid fa-rotate-left"></i>
                 </a>
             </div>
@@ -106,7 +106,7 @@
                         </td>
                         <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ $row->user->name ?? '-' }}</td>
                         <td class="px-6 py-4 text-center">
-                            <button type="button" @click="selectedTx = {{ json_encode($row->load(['supplier', 'user', 'details.item'])) }}" 
+                            <button type="button" @click="selectedTx = @js($row->load(['supplier', 'user', 'details.item']))"
                                     class="p-2 text-slate-400 hover:text-[#ff8000] rounded-xl hover:bg-orange-50 transition" title="Lihat Detail Item">
                                 <i class="fa-solid fa-circle-info text-base"></i>
                             </button>
@@ -131,7 +131,7 @@
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#ff8000]/10 text-[#ff8000]" x-text="selectedTx?.kode_transaksi"></span>
                     <h3 class="font-extrabold text-slate-900 dark:text-white text-lg mt-1">Rincian Barang Masuk</h3>
                 </div>
-                <button type="button" @click="selectedTx = null" class="text-slate-400 hover:text-slate-600">
+                <button aria-label="Tutup rincian" type="button" @click="selectedTx = null" class="text-slate-400 hover:text-slate-600">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>

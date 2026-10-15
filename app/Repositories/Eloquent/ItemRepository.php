@@ -14,9 +14,21 @@ class ItemRepository implements ItemRepositoryInterface
         return Item::with(['category', 'supplier'])->orderBy('nama_barang', 'asc')->get();
     }
 
-    public function getPaginated(int $perPage = 15): LengthAwarePaginator
+    public function getPaginated(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         return Item::with(['category', 'supplier'])
+            ->when(trim($filters['search'] ?? '') !== '', function ($query) use ($filters) {
+                $search = '%'.trim($filters['search']).'%';
+                $query->where(function ($query) use ($search) {
+                    $query->where('kode_barang', 'like', $search)
+                        ->orWhere('nama_barang', 'like', $search)
+                        ->orWhere('barcode', 'like', $search);
+                });
+            })
+            ->when($filters['category'] ?? null, fn ($query, $category) => $query->where('category_id', $category))
+            ->when(($filters['stock'] ?? '') === 'low', fn ($query) => $query->whereColumn('stok', '<=', 'minimum_stok'))
+            ->when(($filters['stock'] ?? '') === 'normal', fn ($query) => $query->whereColumn('stok', '>', 'minimum_stok'))
+            ->when(($filters['stock'] ?? '') === 'empty', fn ($query) => $query->where('stok', 0))
             ->orderBy('nama_barang', 'asc')
             ->paginate($perPage)
             ->withQueryString();

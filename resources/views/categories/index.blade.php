@@ -45,7 +45,7 @@
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50 text-slate-700 dark:text-slate-300">
                     @forelse($categories as $index => $category)
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition"
-                        x-show="search === '' || '{{ strtolower($category->nama) }}'.includes(search.toLowerCase())">
+                        x-show="search === '' || @js(strtolower($category->nama)).includes(search.toLowerCase())">
                         <td class="px-6 py-4 font-semibold text-slate-400">{{ $index + 1 }}</td>
                         <td class="px-6 py-4 font-bold text-slate-800 dark:text-white flex items-center space-x-3">
                             <div class="w-8 h-8 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold border border-cyan-500/20">
@@ -66,7 +66,7 @@
                                 <form id="delete-category-{{ $category->id }}" action="{{ route('categories.destroy', $category->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" onclick="confirmDelete('delete-category-{{ $category->id }}', 'Apakah Anda yakin ingin menghapus kategori {{ $category->nama }}?')" 
+                                    <button type="button" onclick="confirmDelete(@js('delete-category-'.$category->id), @js('Hapus data: '.$category->nama. '?'))"
                                             class="p-2 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Hapus Kategori">
                                         <i class="fa-solid fa-trash text-base"></i>
                                     </button>

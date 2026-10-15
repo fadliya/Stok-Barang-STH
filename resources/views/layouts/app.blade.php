@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarOpen: false }" :class="{ 'dark': darkMode }">
+<html lang="id" x-data="{ darkMode: localStorage.getItem('darkMode') === 'true', sidebarOpen: false, desktop: window.innerWidth >= 1024 }" :class="{ 'dark': darkMode }" @resize.window="desktop = window.innerWidth >= 1024">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,48 +10,7 @@
     <link rel="icon" type="image/png" href="{{ asset('assets/logo.png') }}">
     <link rel="shortcut icon" href="{{ asset('favicon.ico') }}">
 
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#fff8f0',
-                            100: '#ffeedb',
-                            200: '#ffd9b3',
-                            300: '#ffbf80',
-                            400: '#ffa04d',
-                            500: '#ff8000',
-                            600: '#e67300',
-                            700: '#cc6600',
-                            800: '#b35900',
-                            900: '#804000',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
-    
-    <!-- Alpine JS -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    
-    <!-- FontAwesome & SweetAlert2 & ChartJS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         [x-cloak] { display: none !important; }
         
@@ -72,9 +31,9 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen transition-colors duration-200">
+<body @keydown.escape.window="sidebarOpen = false" class="inventory-shell bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen transition-colors duration-200">
 
-    <div class="flex h-screen overflow-hidden">
+    <a class="skip-link" href="#main-content">Lewati navigasi</a><div class="flex h-dvh overflow-hidden">
         
         <!-- Sidebar Backdrop (Mobile) -->
         <div x-cloak x-show="sidebarOpen" @click="sidebarOpen = false" 
@@ -87,7 +46,7 @@
              class="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden"></div>
 
         <!-- Sidebar Left (Clean White Theme with #ff8000 Accent) -->
-        <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-300 transform lg:static lg:translate-x-0 shadow-sm"
+        <aside id="app-sidebar" :inert="!sidebarOpen && !desktop" x-trap.inert.noscroll="sidebarOpen && !desktop" class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-300 transform lg:static lg:translate-x-0 shadow-sm"
                :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
             
             <!-- Brand Header -->
@@ -101,7 +60,7 @@
                         <p class="text-[10px] text-[#ff8000] font-extrabold tracking-wider uppercase">Stok Barang System</p>
                     </div>
                 </div>
-                <button @click="sidebarOpen = false" class="lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                <button aria-label="Tutup navigasi" @click="sidebarOpen = false" class="lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-white">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>
@@ -236,7 +195,7 @@
             <!-- Top Navbar (Pure White) -->
             <header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-6 shadow-sm z-30 transition-colors">
                 <div class="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1 mr-2">
-                    <button @click="sidebarOpen = true" class="lg:hidden text-slate-600 dark:text-slate-300 hover:text-slate-900 focus:outline-none p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0">
+                    <button aria-label="Buka navigasi" aria-controls="app-sidebar" :aria-expanded="sidebarOpen" @click="sidebarOpen = true" class="lg:hidden text-slate-600 dark:text-slate-300 hover:text-slate-900 focus:outline-none p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0">
                         <i class="fa-solid fa-bars text-xl"></i>
                     </button>
                     <div class="min-w-0">
@@ -247,9 +206,9 @@
 
                 <div class="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
                     <!-- Instagram Link Button -->
-                    <a href="https://www.instagram.com/sthnetwork.id?igsh=MWJvcjQ4ejVxbTNscQ%3D%3D" target="_blank" 
+                    <a href="https://www.instagram.com/sthnetwork.id?igsh=MWJvcjQ4ejVxbTNscQ%3D%3D" target="_blank" rel="noopener noreferrer"
                        class="p-2 rounded-xl text-[#ff8000] hover:bg-orange-50 dark:hover:bg-slate-800 transition-colors flex items-center space-x-1.5 text-xs font-bold"
-                       title="Instagram PT STH Network">
+                       aria-label="Instagram PT STH Network" title="Instagram PT STH Network">
                         <i class="fa-brands fa-instagram text-lg"></i>
                         <span class="hidden md:inline">@sthnetwork.id</span>
                     </a>
@@ -259,7 +218,7 @@
                     <!-- Dark Mode Toggle Button -->
                     <button @click="darkMode = !darkMode; localStorage.setItem('darkMode', darkMode)" 
                             class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none transition-colors"
-                            title="Toggle Dark Mode">
+                            aria-label="Ganti tema gelap atau terang" :aria-pressed="darkMode" title="Ganti tema">
                         <i class="fa-solid fa-moon text-lg" x-show="!darkMode"></i>
                         <i class="fa-solid fa-sun text-lg text-[#ff8000]" x-show="darkMode"></i>
                     </button>
@@ -272,7 +231,7 @@
                     <div class="relative" x-data="{ openNotification: false }">
                         <button @click="openNotification = !openNotification" 
                                 class="relative p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none transition-colors" 
-                                title="Notifikasi Stok Tipis">
+                                aria-label="Notifikasi stok" :aria-expanded="openNotification" title="Notifikasi Stok Tipis">
                             <i class="fa-solid fa-bell text-lg"></i>
                             @if($lowStockAlertCount > 0)
                             <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-extrabold text-white animate-pulse">
@@ -312,7 +271,7 @@
                                 @endforelse
                             </div>
                             
-                            @if($lowStockAlertCount > 0)
+                            @if($lowStockAlertCount > 0 && (auth()->user()->isAdmin() || auth()->user()->isGudang()))
                             <div class="pt-2 border-t border-slate-100 dark:border-slate-800 text-center">
                                 <a href="{{ route('pos.scan', ['type' => 'incoming']) }}" class="text-[11px] font-extrabold text-[#ff8000] hover:underline">
                                     + Tambah Stok via POS Scanner →
@@ -337,20 +296,20 @@
             </header>
 
             <!-- Main Page Scrollable Body -->
-            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 
                 <!-- Toast Alerts -->
                 @if(session('receipt_url'))
                     <div class="mb-4 p-4 bg-orange-50 rounded-xl"><a class="font-bold text-orange-700 underline" href="{{ session('receipt_url') }}">Lihat / Cetak Struk Transaksi</a></div>
                 @endif
                 @if(session('success'))
-                    <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4000)" 
+                    <div x-data="{ show: true }" x-show="show"
                          class="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 flex items-center justify-between shadow-sm">
                         <div class="flex items-center space-x-3">
                             <i class="fa-solid fa-circle-check text-xl text-emerald-500"></i>
                             <span class="text-sm font-semibold">{{ session('success') }}</span>
                         </div>
-                        <button @click="show = false" class="text-emerald-500 hover:text-emerald-700">
+                        <button aria-label="Tutup pemberitahuan" @click="show = false" class="text-emerald-500 hover:text-emerald-700">
                             <i class="fa-solid fa-xmark text-lg"></i>
                         </button>
                     </div>
@@ -363,7 +322,7 @@
                             <i class="fa-solid fa-circle-exclamation text-xl text-rose-500"></i>
                             <span class="text-sm font-semibold">{{ session('error') }}</span>
                         </div>
-                        <button @click="show = false" class="text-rose-500 hover:text-rose-700">
+                        <button aria-label="Tutup pemberitahuan" @click="show = false" class="text-rose-500 hover:text-rose-700">
                             <i class="fa-solid fa-xmark text-lg"></i>
                         </button>
                     </div>
@@ -376,12 +335,18 @@
                             <i class="fa-solid fa-circle-info text-xl text-[#ff8000]"></i>
                             <span class="text-sm font-semibold">{{ session('info') }}</span>
                         </div>
-                        <button @click="show = false" class="text-[#ff8000] hover:text-[#e67300]">
+                        <button aria-label="Tutup pemberitahuan" @click="show = false" class="text-[#ff8000] hover:text-[#e67300]">
                             <i class="fa-solid fa-xmark text-lg"></i>
                         </button>
                     </div>
                 @endif
 
+                @if($errors->any())
+                    <div class="mb-6 rounded-xl border border-rose-200 bg-rose-50 p-4 text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200" role="alert" tabindex="-1" id="validation-errors">
+                        <h2 class="font-bold mb-2">Periksa kembali isian berikut</h2>
+                        <ul class="list-disc pl-5 text-sm">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+                    </div>
+                @endif
                 @yield('content')
             </main>
 
@@ -398,28 +363,7 @@
         </div>
     </div>
 
-    <!-- SweetAlert Confirm Helper Script -->
-    <script>
-        function confirmDelete(formId, message = 'Apakah Anda yakin ingin menghapus data ini?') {
-            Swal.fire({
-                title: 'Konfirmasi Hapus',
-                text: message,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal',
-                customClass: {
-                    popup: 'rounded-3xl dark:bg-slate-900 dark:text-white',
-                }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById(formId).submit();
-                }
-            });
-        }
-    </script>
+    <!-- Page scripts -->
     @stack('scripts')
 </body>
 </html>

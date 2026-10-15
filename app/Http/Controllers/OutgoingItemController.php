@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\InventoryTransactionRequest;
 use App\Models\Item;
 use App\Repositories\Contracts\OutgoingTransactionRepositoryInterface;
 use App\Services\CategoryService;
@@ -19,9 +20,10 @@ class OutgoingItemController extends Controller
         protected OutgoingTransactionRepositoryInterface $outgoingRepo
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $transactions = $this->outgoingRepo->getPaginated(15);
+        $filters = $request->validate(['search' => ['nullable', 'string', 'max:255']]);
+        $transactions = $this->outgoingRepo->getPaginated(15, trim($filters['search'] ?? ''));
 
         return view('outgoing.index', compact('transactions'));
     }
@@ -35,32 +37,10 @@ class OutgoingItemController extends Controller
         return view('outgoing.create', compact('items', 'categories', 'suppliers'));
     }
 
-    public function store(Request $request)
+    public function store(InventoryTransactionRequest $request)
     {
-        $request->validate([
-            'tanggal' => ['required', 'date'],
-            'tujuan' => ['required', 'string', 'max:255'],
-            'keterangan' => ['nullable', 'string'],
-            'items' => ['required'],
-        ], [
-            'tanggal.required' => 'Tanggal pengeluaran wajib diisi.',
-            'tujuan.required' => 'Tujuan pengiriman / divisi wajib diisi.',
-            'items.required' => 'Daftar barang tidak boleh kosong.',
-        ]);
-
+        $itemsData = $request->validated('items');
         try {
-            $rawItems = is_array($request->items) ? $request->items : json_decode($request->items, true);
-            if (! is_array($rawItems) || count($rawItems) === 0) {
-                return redirect()->back()->withInput()->with('error', 'Silakan pilih minimal 1 barang sebelum menyimpan.');
-            }
-
-            $itemsData = array_map(function ($row) {
-                return [
-                    'item_id' => $row['item_id'] ?? $row['id'] ?? null,
-                    'jumlah' => (int) ($row['jumlah'] ?? 1),
-                ];
-            }, $rawItems);
-
             $headerData = [
                 'tanggal' => $request->tanggal,
                 'tujuan' => $request->tujuan,
@@ -69,7 +49,7 @@ class OutgoingItemController extends Controller
 
             $transaction = $this->inventoryService->processOutgoingTransaction($headerData, $itemsData, auth()->id());
 
-            return redirect()->route('outgoing.index')->with('success', 'Transaksi barang keluar berhasil disimpan. Stok barang telah dikurangi.')->with('receipt_url', route('outgoing.receipt', $transaction->id));
+            return redirect()->route('outgoing.receipt', $transaction->id)->with('success', 'Transaksi barang keluar berhasil disimpan. Stok barang telah dikurangi.')->with('receipt_url', route('outgoing.receipt', $transaction->id));
         } catch (Exception $e) {
             return redirect()->back()->withInput()->with('error', $e->getMessage());
         }
@@ -82,7 +62,7 @@ class OutgoingItemController extends Controller
             return redirect()->route('outgoing.index')->with('error', 'Data transaksi tidak ditemukan.');
         }
 
-        return view('outgoing.show', compact('transaction'));
+        return redirect()->route('outgoing.receipt', $transaction->id);
     }
 
     public function destroy($id)

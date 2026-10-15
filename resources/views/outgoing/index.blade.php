@@ -3,7 +3,7 @@
 @section('title', 'Transaksi Barang Keluar')
 
 @section('content')
-<div class="space-y-6" x-data="{ search: '', selectedTx: null }">
+<div class="space-y-6" x-data="{ selectedTx: null }">
 
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -24,16 +24,20 @@
     </div>
 
     <!-- Search Toolbar -->
+    <form method="GET" action="{{ route('outgoing.index') }}" class="flex flex-wrap items-center gap-3">
     <div class="bg-white dark:bg-slate-900 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
         <div class="relative w-full sm:w-80">
             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                 <i class="fa-solid fa-magnifying-glass text-sm"></i>
             </div>
-            <input type="text" x-model="search" placeholder="Cari kode TRX, tujuan, atau staf..." 
+            <input type="text" name="search" value="{{ request('search') }}" aria-label="Cari transaksi" maxlength="255" placeholder="Cari kode TRX, tujuan, atau staf..."
                    class="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-rose-500">
         </div>
     </div>
 
+    <button class="action-primary" type="submit">Cari transaksi</button><a class="action-secondary" href="{{ route('outgoing.index') }}">Reset</a>
+    </form>
+    <p class="text-sm text-slate-500" role="status">{{ $transactions->total() }} transaksi ditemukan</p>
     <!-- Data Table -->
     <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
@@ -53,7 +57,7 @@
                 <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                     @forelse($transactions as $index => $tx)
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition"
-                        x-show="search === '' || '{{ strtolower($tx->kode_transaksi) }}'.includes(search.toLowerCase()) || '{{ strtolower($tx->tujuan) }}'.includes(search.toLowerCase()) || '{{ strtolower($tx->user->name ?? '') }}'.includes(search.toLowerCase())">
+                        >
                         <td class="px-6 py-4 font-bold text-slate-400">{{ $transactions->firstItem() + $index }}</td>
                         <td class="px-6 py-4 font-mono font-bold text-rose-600 dark:text-rose-400">{{ $tx->kode_transaksi }}</td>
                         <td class="px-6 py-4 font-mono text-slate-600 dark:text-slate-300">{{ $tx->tanggal->format('d/m/Y H:i') }}</td>
@@ -69,7 +73,7 @@
                         <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ $tx->user->name ?? '-' }}</td>
                         <td class="px-6 py-4 text-center">
                             <div class="flex items-center justify-center space-x-2">
-                                <button type="button" @click="selectedTx = {{ json_encode($tx->load(['user', 'details.item'])) }}" 
+                                <button type="button" @click="selectedTx = @js($tx->load(['user', 'details.item']))"
                                         class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition" title="Lihat Rincian Item">
                                     <i class="fa-solid fa-eye text-base"></i>
                                 </button>
@@ -77,7 +81,7 @@
                                 <form id="delete-outgoing-{{ $tx->id }}" action="{{ route('outgoing.destroy', $tx->id) }}" method="POST" class="inline">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="button" onclick="confirmDelete('delete-outgoing-{{ $tx->id }}', 'Apakah Anda yakin ingin menghapus transaksi {{ $tx->kode_transaksi }}? Stok seluruh item akan dikembalikan.')" 
+                                    <button type="button" onclick="confirmDelete(@js('delete-outgoing-'.$tx->id), @js('Hapus data: '.$tx->kode_transaksi. '?'))"
                                             class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-rose-50 transition" title="Hapus Transaksi">
                                         <i class="fa-solid fa-trash text-base"></i>
                                     </button>
@@ -104,7 +108,7 @@
     </div>
 
     <!-- Modal Detail Breakdown Transaksi -->
-    <div x-cloak x-show="selectedTx !== null" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div x-cloak x-show="selectedTx !== null" x-trap.inert.noscroll="selectedTx !== null" @keydown.escape.window="selectedTx = null" role="dialog" aria-modal="true" aria-label="Rincian transaksi" class="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
         <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-2xl space-y-5" @click.outside="selectedTx = null">
             
             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
@@ -112,7 +116,7 @@
                     <span class="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-rose-500/10 text-rose-600" x-text="selectedTx?.kode_transaksi"></span>
                     <h3 class="font-extrabold text-slate-900 dark:text-white text-lg mt-1">Detail Rincian Barang Keluar</h3>
                 </div>
-                <button type="button" @click="selectedTx = null" class="text-slate-400 hover:text-slate-600">
+                <button aria-label="Tutup rincian" type="button" @click="selectedTx = null" class="text-slate-400 hover:text-slate-600">
                     <i class="fa-solid fa-xmark text-xl"></i>
                 </button>
             </div>

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class BarcodeScanController extends Controller
 {
@@ -57,12 +58,20 @@ class BarcodeScanController extends Controller
             'kode_barang' => ['required', 'string', 'max:100', 'unique:items,kode_barang'],
             'barcode' => ['nullable', 'string', 'max:100', 'unique:items,barcode'],
             'nama_barang' => ['required', 'string', 'max:255'],
-            'category_id' => ['nullable'],
+            'category_id' => ['nullable', function ($attribute, $value, $fail) {
+                if ($value !== 'NEW' && (! ctype_digit((string) $value) || ! Category::whereKey($value)->exists())) {
+                    $fail('Kategori tidak ditemukan.');
+                }
+            }],
             'new_category_name' => ['nullable', 'string', 'max:255'],
-            'supplier_id' => ['nullable'],
+            'supplier_id' => ['nullable', function ($attribute, $value, $fail) {
+                if ($value !== 'NEW' && (! ctype_digit((string) $value) || ! Supplier::whereKey($value)->exists())) {
+                    $fail('Supplier tidak ditemukan.');
+                }
+            }],
             'new_supplier_name' => ['nullable', 'string', 'max:255'],
             'satuan' => ['required', 'string', 'max:50'],
-            'stok' => ['nullable', 'integer', 'min:0'],
+            'stok' => ['nullable', 'integer', 'min:0', 'max:2147483647'],
             'minimum_stok' => ['required', 'integer', 'min:0'],
             'keterangan' => ['nullable', 'string'],
         ], [
@@ -73,44 +82,41 @@ class BarcodeScanController extends Controller
             'minimum_stok.required' => 'Minimum stok wajib diisi.',
         ]);
 
-        // Auto-create Category if new_category_name is supplied
-        $categoryId = $request->category_id;
-        if ((! $categoryId || $categoryId === 'NEW') && $request->filled('new_category_name')) {
-            $category = Category::firstOrCreate([
-                'nama' => trim($request->new_category_name),
-            ]);
-            $categoryId = $category->id;
-        }
-
-        // Auto-create Supplier if new_supplier_name is supplied
-        $supplierId = $request->supplier_id;
-        if ((! $supplierId || $supplierId === 'NEW') && $request->filled('new_supplier_name')) {
-            $supplierName = trim($request->new_supplier_name);
-            $slugEmail = Str::slug($supplierName).'-'.substr(uniqid(), -4).'@supplier.com';
-
-            $supplier = Supplier::firstOrCreate(
-                ['nama' => $supplierName],
-                [
-                    'telepon' => '-',
-                    'email' => $slugEmail,
-                    'alamat' => '-',
-                ]
-            );
-            $supplierId = $supplier->id;
-        }
-
-        if (! $categoryId || $categoryId === 'NEW') {
-            return response()->json(['success' => false, 'message' => 'Silakan pilih atau ketik nama Kategori baru.'], 422);
-        }
-
-        if (! $supplierId || $supplierId === 'NEW') {
-            return response()->json(['success' => false, 'message' => 'Silakan pilih atau ketik nama Supplier baru.'], 422);
-        }
-
+        $request->validate([
+            'new_category_name' => [Rule::requiredIf(! $request->category_id || $request->category_id === 'NEW'), 'nullable', 'string', 'max:255'],
+            'new_supplier_name' => [Rule::requiredIf(! $request->supplier_id || $request->supplier_id === 'NEW'), 'nullable', 'string', 'max:255'],
+        ]);
+        $receiptUrl = null;
         $initialStock = (int) $request->input('stok', 0);
 
         try {
-            $item = DB::transaction(function () use ($request, $categoryId, $supplierId, $initialStock) {
+            $item = DB::transaction(function () use ($request, $initialStock, &$receiptUrl) {
+                // Auto-create Category if new_category_name is supplied
+                $categoryId = $request->category_id;
+                if ((! $categoryId || $categoryId === 'NEW') && $request->filled('new_category_name')) {
+                    $category = Category::firstOrCreate([
+                        'nama' => trim($request->new_category_name),
+                    ]);
+                    $categoryId = $category->id;
+                }
+
+                // Auto-create Supplier if new_supplier_name is supplied
+                $supplierId = $request->supplier_id;
+                if ((! $supplierId || $supplierId === 'NEW') && $request->filled('new_supplier_name')) {
+                    $supplierName = trim($request->new_supplier_name);
+                    $slugEmail = Str::slug($supplierName).'-'.substr(uniqid(), -4).'@supplier.com';
+
+                    $supplier = Supplier::firstOrCreate(
+                        ['nama' => $supplierName],
+                        [
+                            'telepon' => '-',
+                            'email' => $slugEmail,
+                            'alamat' => '-',
+                        ]
+                    );
+                    $supplierId = $supplier->id;
+                }
+
                 $data = $request->only([
                     'kode_barang', 'barcode', 'nama_barang', 'satuan', 'minimum_stok', 'keterangan',
                 ]);
@@ -138,6 +144,10 @@ class BarcodeScanController extends Controller
                     ]);
                 }
 
+                if (isset($incomingTrx)) {
+                    $receiptUrl = route('incoming.receipt', $incomingTrx->id);
+                }
+
                 return $item;
             });
         } catch (\Exception $e) {
@@ -152,6 +162,7 @@ class BarcodeScanController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Barang '{$item->nama_barang}' berhasil terdaftar dan masuk ke daftar transaksi.",
+            'receipt_url' => $receiptUrl,
             'item' => [
                 'id' => $item->id,
                 'kode_barang' => $item->kode_barang,

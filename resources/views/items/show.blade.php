@@ -163,10 +163,9 @@
 </div>
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const barcodeValue = "{{ $item->barcode }}";
+    document.addEventListener("app:ready", function() {
+        const barcodeValue = @js($item->barcode);
         if (barcodeValue) {
             JsBarcode("#barcode-canvas", barcodeValue, {
                 format: "CODE128",

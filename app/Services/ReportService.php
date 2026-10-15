@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\IncomingTransaction;
 use App\Models\Item;
+use App\Models\OutgoingTransaction;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Repositories\Contracts\IncomingTransactionRepositoryInterface;
@@ -29,6 +31,11 @@ class ReportService
 
         $lowStockItems = $this->itemRepo->getLowStockItems();
         $latestItems = $this->itemRepo->getLatestItems(5);
+        $recentTransactions = IncomingTransaction::with(['supplier', 'user', 'details'])->latest()->limit(6)->get()
+            ->map(fn ($transaction) => ['type' => 'incoming', 'transaction' => $transaction])
+            ->concat(OutgoingTransaction::with(['user', 'details'])->latest()->limit(6)->get()
+                ->map(fn ($transaction) => ['type' => 'outgoing', 'transaction' => $transaction]))
+            ->sortByDesc(fn ($entry) => $entry['transaction']->created_at)->take(6);
 
         $incomingChart = $this->incomingRepo->getMonthlyStats();
         $outgoingChart = $this->outgoingRepo->getMonthlyStats();
@@ -47,6 +54,7 @@ class ReportService
             'outgoingToday' => $outgoingToday,
             'lowStockItems' => $lowStockItems,
             'latestItems' => $latestItems,
+            'recentTransactions' => $recentTransactions,
             'incomingChart' => $incomingChart,
             'outgoingChart' => $outgoingChart,
             'categoryChart' => $categoryChart,
