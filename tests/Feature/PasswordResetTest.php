@@ -19,14 +19,13 @@ class PasswordResetTest extends TestCase
         return User::factory()->create(['username' => 'reset-user', 'password' => Hash::make('old-password')]);
     }
 
-    public function test_guest_can_request_a_reset_link_without_disclosing_registered_emails(): void
+    public function test_guest_can_request_a_reset_link_for_registered_email(): void
     {
         Notification::fake();
         $user = $this->user();
         $this->get('/login')->assertOk()->assertSee('Lupa password?');
         $this->get('/forgot-password')->assertOk();
         $this->from('/forgot-password')->post('/forgot-password', ['email' => $user->email])->assertRedirect('/forgot-password')->assertSessionHas('status');
-        $status = session('status');
         Notification::assertSentTo($user, ResetPasswordNotification::class, function ($notification) use ($user) {
             $this->assertTrue(Password::tokenExists($user, $notification->token));
             $url = $notification->toMail($user)->actionUrl;
@@ -35,8 +34,28 @@ class PasswordResetTest extends TestCase
 
             return true;
         });
-        $this->post('/forgot-password', ['email' => 'unknown@example.com'])->assertSessionHas('status', $status);
+        $this->post('/forgot-password', ['email' => 'unknown@example.com'])->assertSessionHasErrors('email');
         Notification::assertCount(1);
+    }
+
+    public function test_username_sends_reset_to_linked_email(): void
+    {
+        Notification::fake();
+        $user = $this->user();
+        $this->post('/forgot-password', ['email' => '  '.$user->username.'  '])->assertSessionHas('status');
+        Notification::assertSentTo($user, ResetPasswordNotification::class);
+    }
+
+    public function test_account_without_email_and_unknown_username_do_not_send_email(): void
+    {
+        Notification::fake();
+        $user = $this->user();
+        $user->forceFill(['email' => null])->save();
+        $this->post('/forgot-password', ['email' => $user->username])->assertSessionHasErrors([
+            'email' => 'Akun ini belum memiliki email yang valid. Hubungi admin untuk memperbarui email akun.',
+        ]);
+        $this->post('/forgot-password', ['email' => 'unknown-user'])->assertSessionHasErrors('email');
+        Notification::assertNothingSent();
     }
 
     public function test_valid_token_changes_password_and_cannot_be_reused(): void

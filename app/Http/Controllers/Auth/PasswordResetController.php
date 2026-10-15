@@ -19,11 +19,26 @@ class PasswordResetController extends Controller
 
     public function email(Request $request)
     {
-        $data = $request->validate(['email' => ['required', 'email', 'max:255']]);
+        $data = $request->validate(['email' => ['required', 'string', 'max:255']]);
+        $identifier = trim($data['email']);
+        $column = filter_var($identifier, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        $user = User::where($column, $identifier)->first();
 
-        Password::sendResetLink($data);
+        if (! $user) {
+            return back()->withErrors(['email' => 'Email atau username tidak ditemukan.'])->withInput($request->only('email'));
+        }
 
-        return back()->with('status', 'Jika email terdaftar, tautan reset password akan dikirim. Periksa kotak masuk atau folder spam.');
+        if (! filter_var($user->email, FILTER_VALIDATE_EMAIL)) {
+            return back()->withErrors(['email' => 'Akun ini belum memiliki email yang valid. Hubungi admin untuk memperbarui email akun.'])->withInput($request->only('email'));
+        }
+
+        $status = Password::sendResetLink(['email' => $user->email]);
+
+        if ($status === Password::ResetThrottled) {
+            return back()->withErrors(['email' => 'Tautan reset baru saja diminta. Tunggu sebentar sebelum mencoba lagi.'])->withInput($request->only('email'));
+        }
+
+        return back()->with('status', 'Tautan reset password telah dikirim ke email yang terhubung dengan akun. Periksa kotak masuk atau folder spam.');
     }
 
     public function reset(Request $request, string $token)
