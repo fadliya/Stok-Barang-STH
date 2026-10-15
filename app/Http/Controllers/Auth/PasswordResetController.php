@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 
 class PasswordResetController extends Controller
 {
@@ -32,13 +33,29 @@ class PasswordResetController extends Controller
             return back()->withErrors(['email' => 'Akun ini belum memiliki email yang valid. Hubungi admin untuk memperbarui email akun.'])->withInput($request->only('email'));
         }
 
-        $status = Password::sendResetLink(['email' => $user->email]);
+        try {
+            $status = Password::sendResetLink(['email' => $user->email]);
+        } catch (TransportExceptionInterface $exception) {
+            // The broker creates the token before sending. Remove it on failure so
+            // a failed delivery does not throttle the next attempt for this account.
+            Password::deleteToken($user);
+            report($exception);
+
+            return back()->withErrors(['email' => 'Layanan email gagal menerima permintaan reset. Silakan coba lagi nanti atau hubungi admin.'])->withInput($request->only('email'));
+        }
 
         if ($status === Password::ResetThrottled) {
             return back()->withErrors(['email' => 'Tautan reset baru saja diminta. Tunggu sebentar sebelum mencoba lagi.'])->withInput($request->only('email'));
         }
 
-        return back()->with('status', 'Tautan reset password telah dikirim ke email yang terhubung dengan akun. Periksa kotak masuk atau folder spam.');
+        if ($status !== Password::ResetLinkSent) {
+            return back()->withErrors(['email' => 'Permintaan reset tidak dapat diproses. Silakan coba lagi.'])->withInput($request->only('email'));
+        }
+
+        [$local, $domain] = explode('@', $user->email, 2);
+        $destination = mb_substr($local, 0, 1).'***@'.$domain;
+
+        return back()->with('status', 'Permintaan pengiriman tautan reset diterima untuk '.$destination.'. Periksa kotak masuk atau spam. Email masih dapat tertunda atau ditolak oleh layanan email.');
     }
 
     public function reset(Request $request, string $token)

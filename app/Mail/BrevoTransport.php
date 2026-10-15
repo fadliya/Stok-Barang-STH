@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\Mailer\Exception\TransportException;
 use Symfony\Component\Mailer\SentMessage;
 use Symfony\Component\Mailer\Transport\AbstractTransport;
@@ -66,6 +67,10 @@ class BrevoTransport extends AbstractTransport
             // Do not include response bodies containing message content or credentials in logs.
             throw new TransportException('API Brevo menolak pengiriman email (HTTP '.$response->status().').');
         }
+
+        Log::info('Brevo menerima permintaan pengiriman email.', [
+            'message_id' => $response->json('messageId'),
+        ]);
     }
 
     public function __toString(): string

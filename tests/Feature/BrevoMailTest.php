@@ -50,6 +50,34 @@ class BrevoMailTest extends TestCase
         Mail::raw('Test', fn ($message) => $message->to('recipient@example.com')->subject('Test'));
     }
 
+    public function test_failed_delivery_returns_form_error_and_allows_retry(): void
+    {
+        Http::fake(['api.brevo.com/*' => Http::sequence()
+            ->push(['message' => 'unauthorized'], 401)
+            ->push(['messageId' => 'retry-id'], 201)]);
+        $user = User::factory()->create(['username' => 'fadliiskandar30', 'email' => 'fadli@example.com']);
+
+        $this->from('/forgot-password')->post('/forgot-password', ['email' => $user->username])
+            ->assertRedirect('/forgot-password')->assertSessionHasErrors('email')->assertSessionMissing('status');
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+
+        $this->from('/forgot-password')->post('/forgot-password', ['email' => $user->username])
+            ->assertRedirect('/forgot-password')->assertSessionHasNoErrors()->assertSessionHas('status');
+        $this->assertStringContainsString('f***@example.com', session('status'));
+        Http::assertSent(fn ($request) => $request['to'][0]['email'] === 'fadli@example.com');
+        Http::assertSentCount(2);
+    }
+
+    public function test_connection_failure_returns_form_error_without_stale_token(): void
+    {
+        Http::fake(['api.brevo.com/*' => Http::failedConnection()]);
+        $user = User::factory()->create(['username' => 'timeout-user']);
+
+        $this->from('/forgot-password')->post('/forgot-password', ['email' => $user->username])
+            ->assertRedirect('/forgot-password')->assertSessionHasErrors('email')->assertSessionMissing('status');
+        $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+    }
+
     public function test_missing_key_fails_without_http_request(): void
     {
         config(['services.brevo.key' => '']);
