@@ -200,7 +200,7 @@
                     </button>
                     <div class="min-w-0">
                         <h2 class="text-sm sm:text-lg font-extrabold text-slate-900 dark:text-white leading-tight truncate">@yield('title', 'Dashboard')</h2>
-                        <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block truncate">PT STH Network Inventory Management System</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block truncate">PT STH Network - Sistem Manajemen Stok Barang</p>
                     </div>
                 </div>
 
