@@ -43,7 +43,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="flex flex-wrap gap-4 items-center"><button type="submit" @disabled($items->isEmpty()) class="px-5 py-3 rounded-xl bg-orange-600 text-white font-bold disabled:opacity-50">Simpan &amp; Lihat Surat</button><a href="{{ route('goods-requests.index') }}" class="underline">Kembali ke riwayat</a></div>
+        <div class="flex flex-wrap gap-4 items-center"><button type="submit" @disabled($items->isEmpty()) class="px-5 py-3 rounded-xl bg-orange-600 text-white font-bold disabled:opacity-50">Ajukan ke Pimpinan</button><a href="{{ route('goods-requests.index') }}" class="underline">Kembali ke riwayat</a></div>
     </form>
     @endif
 </div>

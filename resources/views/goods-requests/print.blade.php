@@ -9,8 +9,7 @@
         h1 { font-size: 18px; text-align: center; text-decoration: underline; margin-bottom: 0; }
         .number { text-align: center; margin-top: 0; } table { width: 100%; border-collapse: collapse; margin: 24px 0; }
         th, td { border: 1px solid #333; padding: 8px; text-align: left; overflow-wrap: anywhere; } tr { break-inside: avoid; }
-        .signatures { display: flex; justify-content: space-between; margin-top: 40px; text-align: center; gap: 30px; }
-        .signatures div { width: 45%; break-inside: avoid; } .signature { margin-top: 70px; }
+        .barcode-svg { max-width: 100%; height: auto; break-inside: avoid; }
         .actions { display: flex; gap: 20px; align-items: center; margin-bottom: 24px; } button { padding: 10px; cursor: pointer; }
         .notes { white-space: pre-line; overflow-wrap: anywhere; }
         @media print { @page { size: A4; margin: 18mm; } body { margin: 0; padding: 0; max-width: none; } .actions { display: none; } }
@@ -28,6 +27,9 @@
     </tbody></table>
     @if($document->keterangan)<p class="notes"><strong>Catatan:</strong><br>{{ $document->keterangan }}</p>@endif
     <p>Demikian surat pemesanan ini kami sampaikan. Terima kasih atas kerja sama Anda.</p>
-    <div class="signatures"><div>Pemohon<div class="signature">{{ $document->pemohon }}</div></div><div>Mengetahui / Menyetujui<div class="signature">(________________________)</div></div></div>
+    @include('goods-requests.approval')
+    <p>Barcode penerimaan: scan setelah seluruh barang tiba sesuai jumlah pesanan.</p>
+    <svg class="barcode-svg" data-value="{{ $document->kode }}"></svg>
+    @vite(['resources/js/order-barcode.js'])
 </body>
 </html>

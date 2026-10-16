@@ -55,13 +55,22 @@ Route::middleware('auth')->group(function () {
         Route::get('/export-excel', [ReportController::class, 'exportExcel'])->name('export-excel');
     });
 
+    Route::middleware('role:admin,gudang,pimpinan')->group(function () {
+        Route::get('/goods-requests/{goods_request}/print', [GoodsRequestController::class, 'print'])->name('goods-requests.print');
+        Route::get('/goods-requests', [GoodsRequestController::class, 'index'])->name('goods-requests.index');
+        Route::get('/goods-requests/{goods_request}', [GoodsRequestController::class, 'show'])->whereNumber('goods_request')->name('goods-requests.show');
+
+    });
+    Route::post('/goods-requests/{goods_request}/approve', [GoodsRequestController::class, 'approve'])->middleware('role:pimpinan')->name('goods-requests.approve');
+
     // Admin & Gudang Routes (Barcode POS Cashier Scanner Transaksi)
     Route::middleware('role:admin,gudang')->group(function () {
         Route::get('/pos/scan', [PosController::class, 'index'])->name('pos.scan');
         Route::post('/pos/store', [PosController::class, 'store'])->name('pos.store');
 
-        Route::get('/goods-requests/{goods_request}/print', [GoodsRequestController::class, 'print'])->name('goods-requests.print');
-        Route::resource('goods-requests', GoodsRequestController::class)->only(['index', 'create', 'store', 'show']);
+        Route::get('/goods-requests/receive/scan', [GoodsRequestController::class, 'scan'])->name('goods-requests.scan');
+        Route::post('/goods-requests/receive/scan', [GoodsRequestController::class, 'receive'])->name('goods-requests.receive');
+        Route::resource('goods-requests', GoodsRequestController::class)->only(['create', 'store']);
 
         Route::get('/stock-opname', [StockOpnameController::class, 'index'])->name('stock-opname.index');
         Route::post('/stock-opname', [StockOpnameController::class, 'store'])->name('stock-opname.store');

@@ -1,25 +1,30 @@
-# Surat pemesanan supplier
+﻿# Pemesanan supplier dan penerimaan barcode
 
-Jalankan `php artisan migrate` untuk membuat tabel `goods_requests` dan
-`goods_request_details` sebelum membuka menu baru. Migrasi tidak mengubah stok.
+Jalankan `php artisan migrate` dan `npm run build` setelah memperbarui aplikasi.
+Migrasi menambahkan status dan bukti persetujuan; pesanan lama menjadi menunggu
+ACC, tanpa mengubah stok atau menganggap tanda tangan lama sudah disetujui.
 
-1. Buka **Pemesanan Supplier** di sidebar atau **Barang Masuk → Permintaan / Pemesanan**.
-2. Pilih supplier dan klik **Tampilkan Barang**. Semua barang milik supplier itu
-   tampil, termasuk barang yang stoknya masih cukup. Tidak ada pilihan otomatis.
-3. Ceklis barang yang diperlukan dan isi jumlah pesanan dalam satuan barang.
-   Gunakan pencarian nama atau kode bila perlu. Pilihan yang tersembunyi oleh
-   pencarian tetap tersimpan; periksa rincian surat sebelum mencetak.
-4. Isi tanggal serta catatan opsional, lalu klik **Simpan & Lihat Surat**.
-5. Klik **Cetak Surat / Simpan PDF**. Surat ukuran A4 berisi nomor unik,
-   supplier, alamat, rincian barang, jumlah, catatan, dan tempat tanda tangan.
-   Surat dapat dicetak ulang melalui riwayat.
+1. Admin atau petugas gudang membuka **Pemesanan Supplier**, memilih supplier,
+   mencentang barang, mengisi jumlah dan menekan **Ajukan ke Pimpinan**.
+2. Pimpinan membuka menu yang sama, memeriksa detail, lalu menekan **ACC Pemesanan**.
+   Pengajuan dan ACC tidak menambah stok. Pemohon tidak dapat menyetujui sendiri.
+3. Setelah ACC, **Cetak Struk / Simpan PDF** tersedia. Struk memuat rincian barang,
+   nama pemohon, nama pimpinan, waktu persetujuan dan barcode CODE128.
+   Nama dan waktu merupakan bukti persetujuan sistem; tanda tangan manual tidak diperlukan.
+4. Setelah SELURUH barang tiba sesuai jumlah pesanan, admin/gudang membuka
+   **Scan penerimaan**. Scan barcode struk dengan scanner yang mengirim Enter,
+   atau ketik nomor pesanan dan tekan **Terima Seluruh Barang**.
+5. Sistem mengambil seluruh rincian pesanan, membuat transaksi Barang Masuk,
+   menambah stok barang yang sudah terdaftar, lalu menampilkan struk penerimaan.
 
-Fitur tersedia untuk admin dan petugas gudang. Satu surat hanya untuk satu
-supplier. Supplier barang mengikuti pilihan pada data master barang; admin
-dapat memperbaikinya jika salah.
+Barcode berisi nomor pesanan unik yang mengacu ke rincian tersimpan di server,
+sehingga diperlukan koneksi ke aplikasi dan login admin/gudang. Barcode bukan
+salinan seluruh data barang yang bisa dibaca secara offline. Scan tidak memakai
+kamera pada halaman ini. Penerimaan sebagian belum didukung.
 
-Nama supplier, alamat, pemohon, kode/nama barang, dan satuan disalin saat surat
-dibuat supaya cetak ulang tidak berubah mengikuti pembaruan data master.
-Surat belum mengirim email, belum mencatat harga, dan tidak menambah stok.
-Saat barang diterima, catat transaksi **Barang Masuk** seperti biasa serta
-cantumkan nomor surat pada catatan. Penerimaan belum ditautkan otomatis ke surat.
+Pesanan belum ACC, nomor tidak dikenal, dan pesanan yang sudah diterima ditolak.
+Penerimaan berlangsung dalam satu transaksi database dengan penguncian pesanan
+untuk mencegah stok bertambah dua kali. Transaksi penerimaan yang terhubung tidak
+dapat dihapus; koreksi stok melalui Stock Opname agar jejak penerimaan tetap ada.
+Nama supplier, alamat, pemohon, kode/nama barang dan satuan disalin saat pengajuan
+agar cetak ulang tetap stabil. Fitur ini tidak mengirim email dan tidak mencatat harga.

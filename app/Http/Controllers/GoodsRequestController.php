@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\GoodsRequest;
 use App\Models\Item;
 use App\Models\Supplier;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -79,7 +80,7 @@ class GoodsRequestController extends Controller
             return $document;
         });
 
-        return redirect()->route('goods-requests.show', $document)->with('success', 'Surat permintaan disimpan dan siap dicetak.');
+        return redirect()->route('goods-requests.show', $document)->with('success', 'Pemesanan diajukan. Menunggu ACC pimpinan.');
     }
 
     public function show(GoodsRequest $goodsRequest)
@@ -91,8 +92,59 @@ class GoodsRequestController extends Controller
 
     public function print(GoodsRequest $goodsRequest)
     {
+        abort_unless(in_array($goodsRequest->status, ['approved', 'received']), 403, 'Struk tersedia setelah ACC pimpinan.');
         $goodsRequest->load('details');
 
         return view('goods-requests.print', ['document' => $goodsRequest]);
+    }
+
+    public function approve(Request $request, GoodsRequest $goodsRequest)
+    {
+        DB::transaction(function () use ($request, $goodsRequest) {
+            $document = GoodsRequest::whereKey($goodsRequest->id)->lockForUpdate()->firstOrFail();
+            abort_unless($document->status === 'pending', 409, 'Pemesanan sudah diproses.');
+            abort_if($document->user_id === $request->user()->id, 403);
+            $document->update([
+                'status' => 'approved', 'approved_by' => $request->user()->id,
+                'approver_name' => $request->user()->name, 'approved_at' => now(),
+            ]);
+        });
+
+        return redirect()->route('goods-requests.show', $goodsRequest)->with('success', 'Pemesanan disetujui. Struk siap dicetak.');
+    }
+
+    public function scan()
+    {
+        return view('goods-requests.scan');
+    }
+
+    public function receive(Request $request, InventoryService $inventory)
+    {
+        $data = $request->validate(['barcode' => ['required', 'string', 'max:100']]);
+        $transaction = DB::transaction(function () use ($data, $request, $inventory) {
+            $document = GoodsRequest::where('kode', trim($data['barcode']))->lockForUpdate()->first();
+            if (! $document || $document->status !== 'approved') {
+                throw ValidationException::withMessages(['barcode' => 'Pesanan tidak ditemukan, belum disetujui, atau sudah diterima.']);
+            }
+            $details = $document->details()->orderBy('item_id')->get();
+            foreach ($details as $detail) {
+                $item = Item::whereKey($detail->item_id)->lockForUpdate()->firstOrFail();
+                if ((int) $item->stok + (int) $detail->jumlah > 2147483647) {
+                    throw ValidationException::withMessages(['barcode' => 'Jumlah stok melebihi batas sistem.']);
+                }
+            }
+            $transaction = $inventory->processIncomingTransaction([
+                'supplier_id' => $document->supplier_id, 'tanggal' => now(),
+                'keterangan' => 'Penerimaan pemesanan '.$document->kode,
+            ], $details->map(fn ($detail) => ['item_id' => $detail->item_id, 'jumlah' => $detail->jumlah])->all(), $request->user()->id);
+            $document->update([
+                'status' => 'received', 'received_by' => $request->user()->id,
+                'received_at' => now(), 'incoming_transaction_id' => $transaction->id,
+            ]);
+
+            return $transaction;
+        });
+
+        return redirect()->route('incoming.receipt', $transaction)->with('success', 'Seluruh barang pesanan diterima dan stok diperbarui.');
     }
 }

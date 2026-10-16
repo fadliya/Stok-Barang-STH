@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\GoodsRequest;
 use App\Models\StockAdjustment;
 use App\Repositories\Contracts\IncomingTransactionRepositoryInterface;
 use App\Repositories\Contracts\ItemRepositoryInterface;
@@ -80,6 +81,9 @@ class InventoryService
     public function deleteIncomingTransaction(int $id)
     {
         return DB::transaction(function () use ($id) {
+            if (GoodsRequest::where('incoming_transaction_id', $id)->exists()) {
+                throw new Exception('Penerimaan pemesanan supplier tidak dapat dihapus. Gunakan Stock Opname untuk koreksi stok.');
+            }
             $transaction = $this->incomingRepo->findById($id);
             if (! $transaction) {
                 throw new Exception('Data transaksi barang masuk tidak ditemukan!');

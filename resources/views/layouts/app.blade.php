@@ -123,6 +123,9 @@
                     <span>Data Barang</span>
                 </a>
 
+                <a href="{{ route('goods-requests.index') }}" class="flex items-center px-4 py-3 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('goods-requests.*') ? 'bg-[#ff8000] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-800' }}">
+                    <i class="fa-solid fa-file-lines w-6 text-center text-base mr-3"></i><span>Pemesanan Supplier</span>
+                </a>
                 @if(auth()->user()->isAdmin() || auth()->user()->isGudang())
                 <a href="{{ route('pos.scan') }}" 
                    class="flex items-center px-4 py-3 text-sm font-bold rounded-2xl transition-all duration-200 {{ request()->routeIs('pos.*') ? 'bg-[#ff8000] text-white shadow-lg shadow-[#ff8000]/30' : 'text-slate-600 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-800 hover:text-[#ff8000]' }}">
@@ -136,9 +139,7 @@
                     <span>Barang Masuk</span>
                 </a>
 
-                <a href="{{ route('goods-requests.index') }}" class="flex items-center px-4 py-3 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('goods-requests.*') ? 'bg-[#ff8000] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-800' }}">
-                    <i class="fa-solid fa-file-lines w-6 text-center text-base mr-3"></i><span>Pemesanan Supplier</span>
-                </a>
+
 
                 <a href="{{ route('stock-opname.index') }}" class="flex items-center px-4 py-3 text-sm font-bold rounded-2xl transition-all {{ request()->routeIs('stock-opname.*') ? 'bg-[#ff8000] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-800' }}"><i class="fa-solid fa-clipboard-check w-6 text-center text-base mr-3"></i><span>Stok Opname</span></a>
                 <a href="{{ route('outgoing.index') }}" 

@@ -69,6 +69,10 @@ class GoodsRequestTest extends TestCase
         $this->supplier->update(['nama' => 'Supplier Baru']);
         $this->get('/goods-requests')->assertOk()->assertSee($document->kode);
         $this->get('/goods-requests/'.$document->id)->assertOk()->assertSee('Kertas A4');
+        $this->get('/goods-requests/'.$document->id.'/print')->assertForbidden();
+        $leader = User::factory()->create(['role' => 'pimpinan']);
+        $this->actingAs($leader)->post('/goods-requests/'.$document->id.'/approve')->assertRedirect();
+        $this->actingAs($this->user);
         $this->get('/goods-requests/'.$document->id.'/print')->assertOk()
             ->assertSee('Supplier Utama')->assertSee('Kertas A4')->assertSee('Jalan Supplier 1')
             ->assertSee('Mohon dikirim minggu ini.')->assertDontSee('Kertas Tidak Dipilih');
@@ -100,14 +104,48 @@ class GoodsRequestTest extends TestCase
         $this->assertDatabaseCount('goods_requests', 0);
     }
 
-    public function test_read_only_role_cannot_create_or_print_supplier_orders(): void
+    public function test_leader_can_view_and_approve_but_cannot_create_or_receive(): void
     {
         $this->post('/goods-requests', $this->payload())->assertRedirect();
-        $this->user->update(['role' => 'pimpinan']);
-        foreach (['/goods-requests', '/goods-requests/create', '/goods-requests/1', '/goods-requests/1/print'] as $url) {
-            $this->get($url)->assertRedirect('/dashboard');
-        }
+        $leader = User::factory()->create(['role' => 'pimpinan']);
+        $this->actingAs($leader)->get('/goods-requests')->assertOk();
+        $this->get('/goods-requests/1')->assertOk()->assertSee('ACC Pemesanan');
+        $this->get('/goods-requests/create')->assertRedirect('/dashboard');
         $this->post('/goods-requests', $this->payload())->assertRedirect('/dashboard');
-        $this->assertDatabaseCount('goods_requests', 1);
+        $this->post('/goods-requests/receive/scan', ['barcode' => GoodsRequest::first()->kode])->assertRedirect('/dashboard');
+        $this->post('/goods-requests/1/approve')->assertRedirect();
+        $this->get('/goods-requests/1/print')->assertOk()->assertSee($leader->name)->assertSee('Tidak memerlukan tanda tangan manual');
+        $this->post('/goods-requests/1/approve')->assertStatus(409);
+        $this->assertSame(20, $this->item->fresh()->stok);
+    }
+
+    public function test_scan_receives_all_items_once_and_only_after_approval(): void
+    {
+        $other = $this->item->replicate();
+        $other->kode_barang = 'PAPER-002';
+        $other->save();
+        $data = $this->payload();
+        $data['selected'][] = $other->id;
+        $data['quantities'][$other->id] = 3;
+        $this->post('/goods-requests', $data)->assertRedirect();
+        $document = GoodsRequest::firstOrFail();
+        $scan = ['barcode' => $document->kode];
+        $this->post('/goods-requests/1/approve')->assertRedirect('/dashboard');
+        $this->post('/goods-requests/receive/scan', $scan)->assertSessionHasErrors('barcode');
+        $this->post('/goods-requests/receive/scan', ['barcode' => 'unknown'])->assertSessionHasErrors('barcode');
+        $leader = User::factory()->create(['role' => 'pimpinan']);
+        $this->actingAs($leader)->post('/goods-requests/1/approve')->assertRedirect();
+        $this->actingAs($this->user)->get('/goods-requests/receive/scan')->assertOk();
+        $this->post('/goods-requests/receive/scan', $scan)->assertRedirect('/incoming/1/receipt');
+        $this->assertSame(27, $this->item->fresh()->stok);
+        $this->assertSame(23, $other->fresh()->stok);
+        $this->assertSame('received', $document->fresh()->status);
+        $this->assertDatabaseCount('incoming_transaction_details', 2);
+        $this->post('/goods-requests/receive/scan', $scan)->assertSessionHasErrors('barcode');
+        $this->assertDatabaseCount('incoming_transactions', 1);
+        $this->assertSame(27, $this->item->fresh()->stok);
+        $this->delete('/incoming/1')->assertSessionHas('error', 'Penerimaan pemesanan supplier tidak dapat dihapus. Gunakan Stock Opname untuk koreksi stok.');
+        $this->assertDatabaseCount('incoming_transactions', 1);
+        $this->assertSame(27, $this->item->fresh()->stok);
     }
 }
