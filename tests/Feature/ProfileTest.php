@@ -37,7 +37,7 @@ class ProfileTest extends TestCase
 
     public function test_photo_is_stored_in_database_served_privately_and_can_be_removed(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['username' => 'photo-user']);
         $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
         $data = ['name' => $user->name, 'username' => $user->username, 'email' => $user->email];
         $this->actingAs($user)->patch('/profile', $data + ['photo' => UploadedFile::fake()->createWithContent('photo.png', $png)])->assertSessionHasNoErrors()->assertRedirect('/profile');
