@@ -19,8 +19,8 @@ input?.addEventListener('change', async () => {
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
         input.setCustomValidity('Pilih foto JPG, PNG, atau WebP.');
-    } else if (file.size > 512 * 1024) {
-        input.setCustomValidity('Foto terlalu besar. Ukuran maksimal 512 KB.');
+    } else if (file.size > 10 * 1024 * 1024) {
+        input.setCustomValidity('Foto terlalu besar. Ukuran maksimal 10 MB.');
     }
     if (!input.validity.valid) {
         status.textContent = input.validationMessage;

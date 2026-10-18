@@ -67,4 +67,20 @@ class ProfileTest extends TestCase
         $this->patch('/profile', [])->assertRedirect('/login');
         $this->put('/profile/password', [])->assertRedirect('/login');
     }
+
+    public function test_ten_mb_photo_is_accepted_and_compressed_but_larger_upload_is_rejected(): void
+    {
+        $user = User::factory()->create(['username' => 'large-photo-user']);
+        $data = ['name' => $user->name, 'username' => $user->username, 'email' => $user->email];
+        $this->actingAs($user)->patch('/profile', $data + ['photo' => UploadedFile::fake()->image('large.png', 800, 800)->size(10240)])
+            ->assertSessionHasNoErrors()->assertRedirect('/profile');
+        $photo = DB::table('user_profile_photos')->where('user_id', $user->id)->first();
+        $this->assertSame('image/jpeg', $photo->mime);
+        $bytes = base64_decode($photo->data);
+        $this->assertLessThan(512 * 1024, strlen($bytes));
+        $this->assertSame(512, getimagesizefromstring($bytes)[0]);
+        $this->patch('/profile', $data + ['photo' => UploadedFile::fake()->image('too-large.png')->size(10241)])
+            ->assertSessionHasErrors('photo');
+        $this->assertSame($photo->data, DB::table('user_profile_photos')->where('user_id', $user->id)->value('data'));
+    }
 }

@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ProfileController extends Controller
 {
@@ -21,7 +22,7 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'alpha_dash:ascii', Rule::unique('users')->ignore($user->id)],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:512', 'dimensions:max_width=2048,max_height=2048'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240', 'dimensions:max_width=2048,max_height=2048'],
             'remove_photo' => ['nullable', 'boolean'],
         ], [
             'email.unique' => 'Email sudah digunakan akun lain.',
@@ -29,7 +30,7 @@ class ProfileController extends Controller
             'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, garis bawah, atau tanda hubung.',
             'photo.image' => 'Unggah file foto yang valid.',
             'photo.mimes' => 'Foto harus berformat JPG, PNG, atau WebP.',
-            'photo.max' => 'Ukuran foto maksimal 512 KB.',
+            'photo.max' => 'Ukuran foto maksimal 10 MB.',
             'photo.dimensions' => 'Dimensi foto maksimal 2048 × 2048 piksel.',
         ]);
 
@@ -42,9 +43,27 @@ class ProfileController extends Controller
             $account->fill(collect($data)->only(['name', 'username', 'email'])->all())->save();
             if ($request->hasFile('photo')) {
                 $photo = $request->file('photo');
+                $bytes = file_get_contents($photo->getRealPath());
+                $mime = $photo->getMimeType();
+                if ($photo->getSize() > 512 * 1024) {
+                    $image = imagecreatefromstring($bytes);
+                    if ($image === false) {
+                        throw ValidationException::withMessages(['photo' => 'Foto tidak dapat dibaca. Coba foto lain.']);
+                    }
+                    $scale = min(1, 512 / max(imagesx($image), imagesy($image)));
+                    $thumbnail = imagecreatetruecolor(max(1, (int) (imagesx($image) * $scale)), max(1, (int) (imagesy($image) * $scale)));
+                    imagefill($thumbnail, 0, 0, imagecolorallocate($thumbnail, 255, 255, 255));
+                    imagecopyresampled($thumbnail, $image, 0, 0, 0, 0, imagesx($thumbnail), imagesy($thumbnail), imagesx($image), imagesy($image));
+                    ob_start();
+                    imagejpeg($thumbnail, null, 85);
+                    $bytes = ob_get_clean();
+                    $mime = 'image/jpeg';
+                    imagedestroy($image);
+                    imagedestroy($thumbnail);
+                }
                 DB::table('user_profile_photos')->updateOrInsert(['user_id' => $user->id], [
-                    'data' => base64_encode(file_get_contents($photo->getRealPath())),
-                    'mime' => $photo->getMimeType(), 'created_at' => now(), 'updated_at' => now(),
+                    'data' => base64_encode($bytes),
+                    'mime' => $mime, 'created_at' => now(), 'updated_at' => now(),
                 ]);
             } elseif ($request->boolean('remove_photo')) {
                 DB::table('user_profile_photos')->where('user_id', $user->id)->delete();

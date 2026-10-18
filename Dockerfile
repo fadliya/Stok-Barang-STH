@@ -8,8 +8,9 @@ RUN npm run build
 
 FROM php:8.4-apache-bookworm
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates libicu-dev libonig-dev libzip-dev unzip \
-    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring intl zip opcache bcmath \
+    && apt-get install -y --no-install-recommends ca-certificates libicu-dev libonig-dev libzip-dev libpng-dev libjpeg62-turbo-dev libwebp-dev unzip \
+    && docker-php-ext-configure gd --with-jpeg --with-webp \
+    && docker-php-ext-install -j$(nproc) pdo_mysql mbstring intl zip opcache bcmath gd \
     && a2dismod -f mpm_event mpm_worker \
     && a2enmod mpm_prefork rewrite \
     && rm -rf /var/lib/apt/lists/*
@@ -26,5 +27,6 @@ RUN sed -i 's/\r$//' /usr/local/bin/start-app \
     && chmod +x /usr/local/bin/start-app \
     && apache2ctl -t
 ENV APP_ENV=production APP_DEBUG=false LOG_CHANNEL=stderr
+COPY docker/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 EXPOSE 10000
 CMD ["start-app"]
