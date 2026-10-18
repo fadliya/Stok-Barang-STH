@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import './receipt.css';
+@import './orders.css';
 @import '@fortawesome/fontawesome-free/css/all.min.css';
 @import '@fontsource/plus-jakarta-sans/400.css';
 @import '@fontsource/plus-jakarta-sans/500.css';

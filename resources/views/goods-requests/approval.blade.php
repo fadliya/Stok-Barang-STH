@@ -1,9 +1,6 @@
-<div class="p-4 border rounded-xl space-y-2">
-    <p><strong>Status:</strong> {{ ['pending' => 'Menunggu ACC pimpinan', 'approved' => 'Disetujui', 'received' => 'Barang diterima'][$document->status] }}</p>
-    <p><strong>Mengajukan:</strong> {{ $document->pemohon }} — tercatat oleh sistem pada {{ $document->created_at->format('d/m/Y H:i') }}</p>
-    @if($document->approved_at)
-        <p><strong>Mengetahui dan menyetujui:</strong> {{ $document->approver_name }} (Pimpinan) — ACC sistem pada {{ $document->approved_at->format('d/m/Y H:i') }}</p>
-        <p>Bukti persetujuan sistem: {{ $document->kode }}. Tidak memerlukan tanda tangan manual.</p>
-    @endif
-    @if($document->received_at)<p>Diterima pada {{ $document->received_at->format('d/m/Y H:i') }}.</p>@endif
+<div class="order-panel">
+    <div class="order-panel-heading"><div><h2>Status Pemesanan</h2><p>{{ $document->status === 'approved' ? 'Disetujui pimpinan, menunggu pemeriksaan dan penerimaan barang.' : ($document->status === 'received' ? 'Barang telah diterima dan stok diperbarui.' : 'Pengajuan menunggu persetujuan pimpinan.') }}</p></div><span class="order-badge {{ $document->status === 'received' ? 'order-badge-success' : 'order-badge-pending' }}"><i class="fa-solid {{ $document->status === 'received' ? 'fa-check' : 'fa-clock' }}" aria-hidden="true"></i>{{ ['pending' => 'Menunggu ACC pimpinan', 'approved' => 'Pending / Menunggu barang', 'received' => 'Barang diterima'][$document->status] }}</span></div>
+    <dl class="order-meta"><div><dt>Diajukan oleh</dt><dd>{{ $document->pemohon }}</dd><p class="text-xs text-slate-500 mt-1">{{ $document->created_at->format('d/m/Y H:i') }}</p></div>
+    @if($document->approved_at)<div><dt>Disetujui pimpinan</dt><dd>{{ $document->approver_name }}</dd><p class="text-xs text-slate-500 mt-1">{{ $document->approved_at->format('d/m/Y H:i') }}</p></div>@endif
+    @if($document->received_at)<div><dt>Penerimaan selesai</dt><dd>{{ $document->received_at->format('d/m/Y H:i') }}</dd></div>@endif</dl>
 </div>
