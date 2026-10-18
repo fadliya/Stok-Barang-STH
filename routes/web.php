@@ -89,6 +89,7 @@ Route::middleware('auth')->group(function () {
 
     // Admin Only Routes (Manage Users, Suppliers, Categories, CRUD Items)
     Route::middleware('role:admin')->group(function () {
+        Route::get('/users/{user}/photo', [ProfileController::class, 'userPhoto'])->whereNumber('user')->name('users.photo');
         Route::resource('users', UserController::class)->except(['show']);
         Route::resource('suppliers', SupplierController::class)->except(['show']);
         Route::resource('categories', CategoryController::class)->except(['show']);

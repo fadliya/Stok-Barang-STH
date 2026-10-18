@@ -68,6 +68,20 @@ class ProfileTest extends TestCase
         $this->put('/profile/password', [])->assertRedirect('/login');
     }
 
+    public function test_only_admin_can_view_other_user_photo_in_user_management(): void
+    {
+        $owner = User::factory()->create(['role' => 'gudang']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $png = base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=');
+        DB::table('user_profile_photos')->insert(['user_id' => $owner->id, 'data' => base64_encode($png), 'mime' => 'image/png']);
+        $this->actingAs($admin)->get('/users')->assertOk()->assertSee(route('users.photo', $owner));
+        $this->get('/users/'.$owner->id.'/photo')->assertOk()->assertContent($png);
+        $this->get('/users/'.$admin->id.'/photo')->assertOk()->assertHeader('Content-Type', 'image/svg+xml');
+        $this->actingAs($owner)->get('/users/'.$admin->id.'/photo')->assertRedirect('/dashboard');
+        auth()->logout();
+        $this->get('/users/'.$owner->id.'/photo')->assertRedirect('/login');
+    }
+
     public function test_ten_mb_photo_is_accepted_and_compressed_but_larger_upload_is_rejected(): void
     {
         $user = User::factory()->create(['username' => 'large-photo-user']);

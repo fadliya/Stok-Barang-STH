@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -99,13 +100,23 @@ class ProfileController extends Controller
 
     public function photo(Request $request)
     {
-        $photo = DB::table('user_profile_photos')->where('user_id', $request->user()->id)->first();
+        return $this->renderPhoto($request->user());
+    }
+
+    public function userPhoto(User $user)
+    {
+        return $this->renderPhoto($user);
+    }
+
+    private function renderPhoto(User $user)
+    {
+        $photo = DB::table('user_profile_photos')->where('user_id', $user->id)->first();
         if ($photo) {
             return response(base64_decode($photo->data))->header('Content-Type', $photo->mime)
                 ->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff');
         }
 
-        $initials = htmlspecialchars(mb_strtoupper(mb_substr($request->user()->name, 0, 2)), ENT_XML1, 'UTF-8');
+        $initials = htmlspecialchars(mb_strtoupper(mb_substr($user->name, 0, 2)), ENT_XML1, 'UTF-8');
         $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96"><rect width="96" height="96" rx="48" fill="#c4510b"/><text x="48" y="50" text-anchor="middle" dominant-baseline="middle" fill="white" font-family="sans-serif" font-size="30">'.$initials.'</text></svg>';
 
         return response($svg)->header('Content-Type', 'image/svg+xml')->header('Cache-Control', 'private, no-store')->header('X-Content-Type-Options', 'nosniff');

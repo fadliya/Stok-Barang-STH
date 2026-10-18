@@ -60,11 +60,11 @@
                     <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition"
                         x-show="(search === '' || @js(strtolower($user->name)).includes(search.toLowerCase()) || @js(strtolower($user->username)).includes(search.toLowerCase())) && (roleFilter === '' || @js($user->role) === roleFilter)">
                         <td class="px-6 py-4 font-semibold text-slate-400">{{ $index + 1 }}</td>
-                        <td class="px-6 py-4 font-bold text-slate-800 dark:text-white flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-cyan-600 dark:text-cyan-400 border border-slate-200 dark:border-slate-600">
-                                {{ strtoupper(substr($user->name, 0, 2)) }}
+                        <td class="px-6 py-4 font-bold text-slate-800 dark:text-white">
+                            <div class="flex items-center gap-3">
+                                <img src="{{ route('users.photo', $user) }}" alt="Foto profil {{ $user->name }}" width="40" height="40" loading="lazy" class="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-600">
+                                <span>{{ $user->name }}</span>
                             </div>
-                            <span>{{ $user->name }}</span>
                         </td>
                         <td class="px-6 py-4 font-mono font-semibold text-cyan-600 dark:text-cyan-400">{{ $user->username }}</td>
                         <td class="px-6 py-4 text-slate-500 dark:text-slate-400">{{ $user->email ?? '-' }}</td>
