@@ -31,7 +31,7 @@
         }
     </style>
 </head>
-<body @keydown.escape.window="sidebarOpen = false" class="inventory-shell bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen transition-colors duration-200">
+<body @keydown.escape.window="sidebarOpen = false" class="inventory-shell bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans antialiased h-dvh overflow-hidden print:h-auto print:overflow-visible transition-colors duration-200">
 
     <a class="skip-link" href="#main-content">Lewati navigasi</a><div class="flex h-dvh overflow-hidden">
         
@@ -79,7 +79,7 @@
             </div>
 
             <!-- Navigation Links -->
-            <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+            <nav class="flex-1 min-h-0 px-4 py-6 space-y-1.5 overflow-y-auto">
                 
                 <a href="{{ route('dashboard') }}" 
                    class="flex items-center px-4 py-3 text-sm font-bold rounded-2xl transition-all duration-200 {{ request()->routeIs('dashboard') ? 'bg-[#ff8000] text-white shadow-lg shadow-[#ff8000]/30' : 'text-slate-600 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-800 hover:text-[#ff8000]' }}">
@@ -190,7 +190,7 @@
         </aside>
 
         <!-- Main Content Area -->
-        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div class="flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden">
             
             <!-- Top Navbar (Pure White) -->
             <header class="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 sm:px-6 shadow-sm z-30 transition-colors">
@@ -296,7 +296,7 @@
             </header>
 
             <!-- Main Page Scrollable Body -->
-            <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <main id="main-content" tabindex="-1" class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 lg:p-8">
                 
                 <!-- Toast Alerts -->
                 @if(session('receipt_url'))
