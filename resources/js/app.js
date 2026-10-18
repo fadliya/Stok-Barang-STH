@@ -45,6 +45,9 @@ function labelControls(root = document) {
     });
 }
 labelControls();
+if (document.getElementById('informasi-akun')) {
+    await import('./profile-photo');
+}
 document.getElementById('validation-errors')?.focus();
 new MutationObserver(() => labelControls()).observe(document.body, { childList: true, subtree: true });
 
