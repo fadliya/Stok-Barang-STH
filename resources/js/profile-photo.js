@@ -32,8 +32,8 @@ input?.addEventListener('change', async () => {
     const candidateUrl = previewUrl;
     image.onload = () => {
         if (candidateUrl !== previewUrl) return;
-        if (image.width > 2048 || image.height > 2048) {
-            input.setCustomValidity('Dimensi foto maksimal 2048 × 2048 piksel.');
+        if (image.width > 8192 || image.height > 8192) {
+            input.setCustomValidity('Dimensi foto maksimal 8192 × 8192 piksel.');
             status.textContent = input.validationMessage;
             resetPreview();
             input.reportValidity();

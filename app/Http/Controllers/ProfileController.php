@@ -22,7 +22,7 @@ class ProfileController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'alpha_dash:ascii', Rule::unique('users')->ignore($user->id)],
             'email' => ['required', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240', 'dimensions:max_width=2048,max_height=2048'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240', 'dimensions:max_width=8192,max_height=8192'],
             'remove_photo' => ['nullable', 'boolean'],
         ], [
             'email.unique' => 'Email sudah digunakan akun lain.',
@@ -31,7 +31,7 @@ class ProfileController extends Controller
             'photo.image' => 'Unggah file foto yang valid.',
             'photo.mimes' => 'Foto harus berformat JPG, PNG, atau WebP.',
             'photo.max' => 'Ukuran foto maksimal 10 MB.',
-            'photo.dimensions' => 'Dimensi foto maksimal 2048 × 2048 piksel.',
+            'photo.dimensions' => 'Dimensi foto maksimal 8192 × 8192 piksel.',
         ]);
 
         DB::transaction(function () use ($request, $user, $data) {
@@ -45,7 +45,8 @@ class ProfileController extends Controller
                 $photo = $request->file('photo');
                 $bytes = file_get_contents($photo->getRealPath());
                 $mime = $photo->getMimeType();
-                if ($photo->getSize() > 512 * 1024) {
+                $dimensions = getimagesize($photo->getRealPath());
+                if ($photo->getSize() > 512 * 1024 || max($dimensions[0], $dimensions[1]) > 512) {
                     $image = imagecreatefromstring($bytes);
                     if ($image === false) {
                         throw ValidationException::withMessages(['photo' => 'Foto tidak dapat dibaca. Coba foto lain.']);

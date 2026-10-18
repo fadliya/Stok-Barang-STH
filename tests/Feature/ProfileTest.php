@@ -83,4 +83,18 @@ class ProfileTest extends TestCase
             ->assertSessionHasErrors('photo');
         $this->assertSame($photo->data, DB::table('user_profile_photos')->where('user_id', $user->id)->value('data'));
     }
+
+    public function test_high_resolution_photo_is_resized_even_when_file_is_small(): void
+    {
+        $user = User::factory()->create(['username' => 'high-resolution-user']);
+        $data = ['name' => $user->name, 'username' => $user->username, 'email' => $user->email];
+        $this->actingAs($user)->patch('/profile', $data + ['photo' => UploadedFile::fake()->image('camera.jpg', 4096, 3072)])
+            ->assertSessionHasNoErrors()->assertRedirect('/profile');
+        $photo = DB::table('user_profile_photos')->where('user_id', $user->id)->first();
+        $dimensions = getimagesizefromstring(base64_decode($photo->data));
+        $this->assertSame(512, $dimensions[0]);
+        $this->assertSame(384, $dimensions[1]);
+        $this->patch('/profile', $data + ['photo' => UploadedFile::fake()->image('oversized.jpg', 8193, 1)])
+            ->assertSessionHasErrors('photo');
+    }
 }
