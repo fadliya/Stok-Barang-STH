@@ -6,6 +6,9 @@ set -eu
 : "${DB_PASSWORD:?Set DB_PASSWORD from TiDB Connect}"
 
 sed -i 's/^Listen 80$/Listen 10000/' /etc/apache2/ports.conf
+a2dismod -f mpm_event mpm_worker
+a2enmod mpm_prefork
+apache2ctl -t
 php artisan config:cache
 php artisan migrate --force
 if [ -n "${INITIAL_ADMIN_PASSWORD:-}" ]; then
