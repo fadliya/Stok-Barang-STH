@@ -38,7 +38,17 @@
 
     <button class="action-primary" type="submit">Cari transaksi</button><a class="action-secondary" href="{{ route('incoming.index') }}">Reset</a>
     </form>
-    <p class="text-sm text-slate-500" role="status">{{ $transactions->total() }} transaksi ditemukan</p>
+    <section class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+        <h2 class="text-lg font-bold">Pending / Menunggu Barang ({{ $pendingRequests->total() }})</h2>
+        <p class="text-sm">Pemesanan yang sudah di-ACC otomatis tampil di sini. Stok baru bertambah setelah pemeriksaan dan konfirmasi penerimaan.</p>
+        <div class="overflow-x-auto"><table class="w-full text-sm text-left"><thead><tr><th class="p-3">Nomor pemesanan</th><th class="p-3">Supplier</th><th class="p-3">Tanggal ACC</th><th class="p-3">Jenis barang</th><th class="p-3">Status / tindakan</th></tr></thead><tbody>
+        @forelse($pendingRequests as $document)
+        <tr class="border-t"><td class="p-3">{{ $document->kode }}</td><td class="p-3">{{ $document->penerima }}</td><td class="p-3">{{ $document->approved_at->format('d/m/Y H:i') }}</td><td class="p-3">{{ $document->details_count }}</td><td class="p-3"><span>Pending</span> · <a class="underline text-orange-600" href="{{ route('goods-requests.show', $document) }}">Periksa barang</a></td></tr>
+        @empty<tr><td colspan="5" class="p-3">Tidak ada pesanan pending.</td></tr>@endforelse
+        </tbody></table></div>
+        {{ $pendingRequests->links() }}
+    </section>
+    <p class="text-sm text-slate-500" role="status">{{ $transactions->total() }} transaksi penerimaan selesai ditemukan</p>
     <!-- Data Table -->
     <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">

@@ -23,6 +23,8 @@ Route::get('/', function () {
 });
 
 // Guest Auth Routes
+Route::get('/persetujuan-pemesanan/{goods_request}', [GoodsRequestController::class, 'verify'])
+    ->middleware(['signed', 'throttle:60,1'])->name('goods-requests.verify');
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:login');
@@ -69,7 +71,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/pos/store', [PosController::class, 'store'])->name('pos.store');
 
         Route::get('/goods-requests/receive/scan', [GoodsRequestController::class, 'scan'])->name('goods-requests.scan');
-        Route::post('/goods-requests/receive/scan', [GoodsRequestController::class, 'receive'])->name('goods-requests.receive');
+        Route::post('/goods-requests/{goods_request}/receive', [GoodsRequestController::class, 'receive'])->name('goods-requests.receive');
         Route::resource('goods-requests', GoodsRequestController::class)->only(['create', 'store']);
 
         Route::get('/stock-opname', [StockOpnameController::class, 'index'])->name('stock-opname.index');

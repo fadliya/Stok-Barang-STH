@@ -8,6 +8,7 @@ use App\Models\Item;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
 
 class GoodsRequestTest extends TestCase
@@ -112,40 +113,59 @@ class GoodsRequestTest extends TestCase
         $this->get('/goods-requests/1')->assertOk()->assertSee('ACC Pemesanan');
         $this->get('/goods-requests/create')->assertRedirect('/dashboard');
         $this->post('/goods-requests', $this->payload())->assertRedirect('/dashboard');
-        $this->post('/goods-requests/receive/scan', ['barcode' => GoodsRequest::first()->kode])->assertRedirect('/dashboard');
+        $this->post('/goods-requests/1/receive', ['checked' => [1]])->assertRedirect('/dashboard');
         $this->post('/goods-requests/1/approve')->assertRedirect();
         $this->get('/goods-requests/1/print')->assertOk()->assertSee($leader->name)->assertSee('Tidak memerlukan tanda tangan manual');
         $this->post('/goods-requests/1/approve')->assertStatus(409);
         $this->assertSame(20, $this->item->fresh()->stok);
     }
 
-    public function test_scan_receives_all_items_once_and_only_after_approval(): void
+    public function test_checklist_receives_once_only_after_approval_and_full_inspection(): void
     {
         $other = $this->item->replicate();
         $other->kode_barang = 'PAPER-002';
         $other->save();
-        $data = $this->payload();
-        $data['selected'][] = $other->id;
-        $data['quantities'][$other->id] = 3;
-        $this->post('/goods-requests', $data)->assertRedirect();
+        $payload = $this->payload();
+        $payload['selected'][] = $other->id;
+        $payload['quantities'][$other->id] = 3;
+        $this->post('/goods-requests', $payload)->assertRedirect();
         $document = GoodsRequest::firstOrFail();
-        $scan = ['barcode' => $document->kode];
-        $this->post('/goods-requests/1/approve')->assertRedirect('/dashboard');
-        $this->post('/goods-requests/receive/scan', $scan)->assertSessionHasErrors('barcode');
-        $this->post('/goods-requests/receive/scan', ['barcode' => 'unknown'])->assertSessionHasErrors('barcode');
+        $checked = ['checked' => $document->details->pluck('id')->all()];
+        $this->post('/goods-requests/1/receive', $checked)->assertSessionHasErrors('checked');
         $leader = User::factory()->create(['role' => 'pimpinan']);
         $this->actingAs($leader)->post('/goods-requests/1/approve')->assertRedirect();
-        $this->actingAs($this->user)->get('/goods-requests/receive/scan')->assertOk();
-        $this->post('/goods-requests/receive/scan', $scan)->assertRedirect('/incoming/1/receipt');
+        $this->post('/goods-requests/1/receive', $checked)->assertRedirect('/dashboard');
+        $this->actingAs($this->user)->get('/incoming')->assertOk()->assertSee($document->kode)->assertSee('Pending');
+        $this->assertSame(20, $this->item->fresh()->stok);
+        $this->assertDatabaseCount('incoming_transactions', 0);
+        $this->post('/goods-requests/1/receive', [])->assertSessionHasErrors('checked');
+        $this->post('/goods-requests/1/receive', ['checked' => [$checked['checked'][0]]])->assertSessionHasErrors('checked');
+        $this->post('/goods-requests/1/receive', ['checked' => [99999]])->assertSessionHasErrors('checked');
+        $this->assertSame(20, $this->item->fresh()->stok);
+        $this->post('/goods-requests/1/receive', $checked)->assertRedirect('/incoming/1/receipt');
         $this->assertSame(27, $this->item->fresh()->stok);
         $this->assertSame(23, $other->fresh()->stok);
         $this->assertSame('received', $document->fresh()->status);
-        $this->assertDatabaseCount('incoming_transaction_details', 2);
-        $this->post('/goods-requests/receive/scan', $scan)->assertSessionHasErrors('barcode');
+        $this->assertNotNull($document->fresh()->received_at);
+        $this->post('/goods-requests/1/receive', $checked)->assertSessionHasErrors('checked');
         $this->assertDatabaseCount('incoming_transactions', 1);
         $this->assertSame(27, $this->item->fresh()->stok);
-        $this->delete('/incoming/1')->assertSessionHas('error', 'Penerimaan pemesanan supplier tidak dapat dihapus. Gunakan Stock Opname untuk koreksi stok.');
+        $this->delete('/incoming/1')->assertSessionHas('error');
         $this->assertDatabaseCount('incoming_transactions', 1);
-        $this->assertSame(27, $this->item->fresh()->stok);
+    }
+
+    public function test_public_verification_requires_signed_link_and_actual_approval(): void
+    {
+        $this->post('/goods-requests', $this->payload())->assertRedirect();
+        $document = GoodsRequest::firstOrFail();
+        $url = URL::signedRoute('goods-requests.verify', $document);
+        $this->get($url)->assertNotFound();
+        $leader = User::factory()->create(['role' => 'pimpinan']);
+        $this->actingAs($leader)->post('/goods-requests/1/approve')->assertRedirect();
+        auth()->logout();
+        $this->get($url)->assertOk()->assertSee($leader->name)->assertSee('Kertas A4')->assertSee('Tanggal ACC');
+        $this->get('/persetujuan-pemesanan/1')->assertForbidden();
+        $this->get($url.'&changed=1')->assertForbidden();
+        $this->assertSame(20, $this->item->fresh()->stok);
     }
 }

@@ -8,6 +8,7 @@ use App\Models\Supplier;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -95,7 +96,14 @@ class GoodsRequestController extends Controller
         abort_unless(in_array($goodsRequest->status, ['approved', 'received']), 403, 'Struk tersedia setelah ACC pimpinan.');
         $goodsRequest->load('details');
 
-        return view('goods-requests.print', ['document' => $goodsRequest]);
+        return view('goods-requests.print', ['document' => $goodsRequest, 'verificationUrl' => URL::signedRoute('goods-requests.verify', $goodsRequest)]);
+    }
+
+    public function verify(GoodsRequest $goodsRequest)
+    {
+        abort_unless($goodsRequest->approved_at, 404);
+
+        return view('goods-requests.verify', ['document' => $goodsRequest->load('details')]);
     }
 
     public function approve(Request $request, GoodsRequest $goodsRequest)
@@ -115,22 +123,28 @@ class GoodsRequestController extends Controller
 
     public function scan()
     {
-        return view('goods-requests.scan');
+        return redirect()->route('incoming.index');
     }
 
-    public function receive(Request $request, InventoryService $inventory)
+    public function receive(Request $request, InventoryService $inventory, GoodsRequest $goodsRequest)
     {
-        $data = $request->validate(['barcode' => ['required', 'string', 'max:100']]);
-        $transaction = DB::transaction(function () use ($data, $request, $inventory) {
-            $document = GoodsRequest::where('kode', trim($data['barcode']))->lockForUpdate()->first();
+        $data = $request->validate([
+            'checked' => ['required', 'array', 'min:1', 'max:500'],
+            'checked.*' => ['required', 'integer', 'distinct'],
+        ], ['checked.required' => 'Periksa dan ceklis semua barang sebelum mengonfirmasi penerimaan.']);
+        $transaction = DB::transaction(function () use ($data, $request, $inventory, $goodsRequest) {
+            $document = GoodsRequest::whereKey($goodsRequest->id)->lockForUpdate()->firstOrFail();
             if (! $document || $document->status !== 'approved') {
-                throw ValidationException::withMessages(['barcode' => 'Pesanan tidak ditemukan, belum disetujui, atau sudah diterima.']);
+                throw ValidationException::withMessages(['checked' => 'Pesanan belum disetujui atau sudah diterima.']);
             }
             $details = $document->details()->orderBy('item_id')->get();
+            if ($details->pluck('id')->sort()->values()->all() !== collect($data['checked'])->map(fn ($id) => (int) $id)->sort()->values()->all()) {
+                throw ValidationException::withMessages(['checked' => 'Semua barang dan jumlahnya harus sesuai pesanan. Jika belum lengkap atau tidak sesuai, biarkan pending.']);
+            }
             foreach ($details as $detail) {
                 $item = Item::whereKey($detail->item_id)->lockForUpdate()->firstOrFail();
                 if ((int) $item->stok + (int) $detail->jumlah > 2147483647) {
-                    throw ValidationException::withMessages(['barcode' => 'Jumlah stok melebihi batas sistem.']);
+                    throw ValidationException::withMessages(['checked' => 'Jumlah stok melebihi batas sistem.']);
                 }
             }
             $transaction = $inventory->processIncomingTransaction([

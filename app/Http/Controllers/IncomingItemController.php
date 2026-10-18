@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\InventoryTransactionRequest;
+use App\Models\GoodsRequest;
 use App\Models\Item;
 use App\Repositories\Contracts\IncomingTransactionRepositoryInterface;
 use App\Services\CategoryService;
@@ -25,7 +26,12 @@ class IncomingItemController extends Controller
         $filters = $request->validate(['search' => ['nullable', 'string', 'max:255']]);
         $transactions = $this->incomingRepo->getPaginated(15, trim($filters['search'] ?? ''));
 
-        return view('incoming.index', compact('transactions'));
+        $pendingRequests = GoodsRequest::withCount('details')->where('status', 'approved')
+            ->when(trim($filters['search'] ?? ''), fn ($query, $search) => $query->where(function ($query) use ($search) {
+                $query->where('kode', 'like', '%'.$search.'%')->orWhere('penerima', 'like', '%'.$search.'%');
+            }))->latest('approved_at')->paginate(15, ['*'], 'pending_page')->withQueryString();
+
+        return view('incoming.index', compact('transactions', 'pendingRequests'));
     }
 
     public function create()

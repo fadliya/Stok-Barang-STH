@@ -156,14 +156,15 @@
             @endforeach
         </section>
         <p class="approval-note">Bukti persetujuan sistem: {{ $document->kode }}. Tidak memerlukan tanda tangan manual.</p>
-        <section class="receiving" aria-label="Barcode penerimaan barang">
-            <h2>Barcode penerimaan barang</h2>
-            <div class="barcode-wrap" role="region" aria-label="Barcode nomor pesanan" tabindex="0"><svg class="barcode-svg" data-value="{{ $document->kode }}" role="img" aria-label="Barcode pesanan {{ $document->kode }}"></svg></div>
-            <p class="scan-help">Scan di menu Scan penerimaan setelah seluruh barang tiba sesuai jumlah pesanan.</p>
+        <section class="receiving" aria-label="Tanda tangan QR persetujuan pimpinan">
+            <h2>Disetujui oleh Pimpinan</h2>
+            <canvas class="approval-qr" data-value="{{ $verificationUrl }}" role="img" aria-label="QR verifikasi persetujuan {{ $document->kode }}"></canvas>
+            <p><strong>{{ $document->approver_name }}</strong><br>{{ $document->approved_at->format('d/m/Y H:i') }}</p>
+            <p class="scan-help">Pindai QR untuk melihat bukti ACC dan daftar barang yang disetujui.</p>
+            <p><a href="{{ $verificationUrl }}">Lihat bukti persetujuan</a></p>
             @if($document->received_at)<p class="received-at">Penerimaan tercatat pada {{ $document->received_at->format('d/m/Y H:i') }}</p>@endif
-        </section>
-        <footer class="footer"><span>PT STH NETWORK &middot; Dokumen pemesanan supplier</span><span>Dicetak dari Sistem Stok Barang</span></footer>
+        </section>        <footer class="footer"><span>PT STH NETWORK &middot; Dokumen pemesanan supplier</span><span>Dicetak dari Sistem Stok Barang</span></footer>
     </main>
-    @vite(['resources/js/order-barcode.js'])
+    @vite(['resources/js/approval-qr.js'])
 </body>
 </html>

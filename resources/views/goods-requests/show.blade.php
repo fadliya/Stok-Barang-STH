@@ -8,7 +8,7 @@
     @if($document->status === 'pending' && auth()->user()->isPimpinan())
     <form method="POST" action="{{ route('goods-requests.approve', $document) }}">@csrf<button type="submit" class="px-5 py-3 bg-emerald-700 text-white rounded-xl">ACC Pemesanan</button></form>
     @endif
-    @if(!auth()->user()->isPimpinan())<a href="{{ route('goods-requests.scan') }}" class="underline">Scan penerimaan pesanan</a>@endif
+    @include('goods-requests.receiving')
     <div class="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
         <p><strong>Supplier:</strong> {{ $document->penerima }}</p><p><strong>Alamat:</strong> {{ $document->alamat ?: '-' }}</p>
         <p><strong>Tanggal:</strong> {{ $document->tanggal->format('d/m/Y') }}</p><p><strong>Pemohon:</strong> {{ $document->pemohon }}</p>
@@ -19,7 +19,7 @@
             @foreach($document->details as $detail)<tr class="border-t border-slate-200 dark:border-slate-800"><td class="p-4">{{ $detail->kode_barang }}</td><td class="p-4">{{ $detail->nama_barang }}</td><td class="p-4">{{ number_format($detail->jumlah) }} {{ $detail->satuan }}</td></tr>@endforeach
         </tbody></table>
     </div>
-    <p>Stok bertambah setelah barcode struk dipindai pada menu Scan penerimaan.</p>
+    <p>Pemesanan yang disetujui tampil sebagai pending pada Barang Masuk. Stok bertambah setelah semua barang diperiksa dan penerimaan dikonfirmasi.</p>
     <div class="flex flex-wrap gap-4"><a href="{{ route('goods-requests.index') }}" class="underline">Riwayat pemesanan</a></div>
 </div>
 @endsection
