@@ -10,6 +10,7 @@ use App\Http\Controllers\IncomingItemController;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\OutgoingItemController;
 use App\Http\Controllers\PosController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\StockOpnameController;
@@ -38,6 +39,10 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'password'])->middleware('throttle:5,1')->name('profile.password');
+    Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
 
     // Barcode Scanning API Endpoints
     Route::get('/api/items/scan', [BarcodeScanController::class, 'scan'])->name('api.items.scan');

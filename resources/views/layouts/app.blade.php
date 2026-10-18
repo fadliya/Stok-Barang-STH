@@ -68,9 +68,7 @@
             <!-- User Info Badge -->
             <div class="px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-orange-50/50 dark:bg-slate-800/40">
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-full bg-[#ff8000] text-white flex items-center justify-center font-extrabold text-sm shadow-md shadow-[#ff8000]/20">
-                        {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                    </div>
+                    <a href="{{ route('profile.edit') }}" aria-label="Buka profil saya" class="shrink-0"><img src="{{ route('profile.photo') }}" alt="Foto profil" class="w-10 h-10 rounded-full object-cover"></a>
                     <div class="truncate">
                         <p class="text-sm font-bold text-slate-900 dark:text-white truncate">{{ auth()->user()->name }}</p>
                         <span class="inline-block px-2.5 py-0.5 text-[10px] font-extrabold tracking-wider rounded-full uppercase bg-[#ff8000]/10 text-[#ff8000] border border-[#ff8000]/30">
@@ -180,6 +178,7 @@
 
             <!-- Bottom Action -->
             <div class="p-4 border-t border-slate-100 dark:border-slate-800">
+                <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-3 mb-3 rounded-xl text-sm font-bold {{ request()->routeIs('profile.*') ? 'bg-orange-50 text-orange-700 dark:bg-slate-800' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800' }}"><i class="fa-solid fa-user-gear" aria-hidden="true"></i> Profil Saya</a>
                 <form action="{{ route('logout') }}" method="POST">
                     @csrf
                     <button type="submit" class="w-full flex items-center justify-center px-4 py-2.5 text-sm font-bold text-rose-500 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 rounded-2xl transition-colors border border-rose-200 dark:border-rose-500/20">
